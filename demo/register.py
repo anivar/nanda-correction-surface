@@ -142,7 +142,7 @@ def main() -> dict:
     state = {
         "agents": agents_state,
         "issuers": {"provider": provider.did, "auditor": auditor.did},
-        # Issuer secrets persisted (shared/ only) so the Level-2 extension demos can
+        # Issuer secrets persisted (shared/ only) so the correction-surface extension demos can
         # issue VCs from the SAME trusted issuers the trust policy already pins.
         "issuer_secrets": {
             "provider": provider.to_secret_dict(),

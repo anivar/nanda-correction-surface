@@ -1,4 +1,4 @@
-"""Step 5 — contest: the affected-party half of the trust object (Level 2).
+"""Step 5 — contest: the affected-party half of the trust object (the correction surface).
 
 An affected party files a signed counter-claim, bound to a prior interaction the
 agent itself acknowledged, and posts it to the facts hosts. The client, on its

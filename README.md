@@ -27,8 +27,8 @@ docker compose --profile demo run --rm demo
 ./demo/run_local.sh          # or:  make demo
 ```
 
-Either way you get the same five-step walkthrough: register → resolve → tamper →
-spoof → contest.
+Either way you get the same eight-step walkthrough: register → resolve → tamper →
+spoof → contest → exit → registrations → revoke.
 
 Toolchain: **uv** (env + Python 3.14, `uv.lock` pinned), **ruff** (lint + format),
 `pytest`. No global Python or `pip` needed.
@@ -42,6 +42,9 @@ Toolchain: **uv** (env + Python 3.14, `uv.lock` pinned), **ruff** (lint + format
 | **tamper** | a mutated AgentAddr (redirected facts pointer, inflated ttl, corrupted signature) is **rejected** — fail closed |
 | **spoof** | a credential from an **untrusted issuer**, and a **tampered** credential from a trusted issuer, are both **rejected** |
 | **contest** | an affected party files a **signed counter-claim** bound to a prior interaction; the client verifies its standing and **surfaces it alongside** the issuers' claims |
+| **exit** | self-sovereign severance — the agent retires its own did:key; prior authority becomes **inexecutable** |
+| **registrations** | quilt of registration types in action: native, enterprise, and did:key paths |
+| **revoke** | issuer-signed revocation entry served by the index and **verified client-side** — only a credential's own trusted issuer may revoke it |
 
 ## Architecture
 
@@ -87,9 +90,9 @@ The full reasoning, the contestation argument, the standards context (OpenID
 AuthZEN, AARP, COAZ), and honest limitations are in
 **[docs/design-note.md](docs/design-note.md)**.
 
-## Level 2 — the contestation dual
+## The correction surface (contestation + exit)
 
-Level 1 was built and passing end-to-end first. On top of it: AgentFacts is a
+The core resolution flow was built and verified end-to-end first. On top of it: AgentFacts is a
 one-way object (issuers attest *to* the agent). The contestation record is the
 return path — a signed counter-claim from a party the agent acted upon, bound to
 an interaction the agent itself acknowledged (the standing anchor), surfaced to
@@ -106,10 +109,11 @@ facts/        Tier 2 — AgentFacts host (same code runs as primary and neutral)
 agent/        Tier 3 — minimal agent runtime (so "act" is a real round-trip)
 issuer/       build & issue provider + auditor VCs
 client/       the verifying resolver (prints & verifies every hop, fails closed)
-demo/         register / resolve / tamper / spoof / contest / run_all / run_local.sh
+demo/         register / resolve / tamper / spoof / contest / exit / run_all / run_local.sh
+explorer/     self-contained protocol explorer (static-hostable; real in-process crypto)
 schemas/      JSON Schemas for every artefact
-tests/        50 unit + integration tests
-docs/         design note, A2A mapping
+tests/        74 unit + integration tests
+docs/         design note, A2A mapping, diagrams
 ```
 
 ## Testing
@@ -119,13 +123,37 @@ make test         # or: uv run pytest -q
 make lint         # ruff check + format --check
 ```
 
-50 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
+74 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
 detection, VC issue/verify (untrusted-issuer / tamper / expiry), the facts host,
-contestation standing, and the A2A projection.
+contestation standing, self-sovereign exit (severance), the resolver walk, and the
+A2A projection.
 
-## Scope I set aside (and next steps)
+## Protocol explorer & diagrams
 
-Deliberately out of scope for a weekend prototype (noted in the design note):
+A self-contained visual walk-through of the resolution flow, with **real in-process
+crypto** (Ed25519/JCS, W3C VCs, severance) — no dependency on the other services:
+
+```bash
+make explorer        # → http://localhost:8090   (or: docker compose up → :8090)
+```
+
+Scenarios: resolve · privacy · tamper · spoof · contest · exit. The UI marks the
+boundary between the **NANDA paper** (the substrate) and the **correction surface**
+extension, with operator-side authorisation shown as cited context.
+
+It hosts with **no backend** (e.g. GitHub Pages or any static domain):
+
+```bash
+uv run python -m explorer.build_static   # precompute explorer/static/data/*.json
+# then publish explorer/static/ as-is (relative paths; works under a subpath)
+```
+
+Architecture, resolution sequence, the layer/boundary model and the exit flow are in
+**[docs/diagrams.md](docs/diagrams.md)** (Mermaid).
+
+## Scope & next steps
+
+Deliberately out of scope for this prototype (noted in the design note):
 adaptive/rotating endpoint resolution (Tier 3 routing), CRDT cross-registry
 federation, a real VC Status List (revocation is stubbed), real standing
 infrastructure (stubbed via agent-signed receipts), persistence, and production
@@ -139,15 +167,25 @@ Built with an AI coding assistant as the primary tool. I used it to (a) read and
 paper and current standards against primary sources (W3C VC 2.0, RFC 8785/8032,
 did:key, the OpenID AuthZEN/AARP/COAZ announcement) before writing code, (b)
 scaffold and implement the services and tests, and (c) keep the commit history
-incremental. All cryptography is from established libraries (`cryptography`,
-`PyJWT`, `rfc8785`) — no primitives were hand-rolled. Design decisions, scope
-control (Level 1 before Level 2), and the contestation framing are mine.
+incremental. All cryptography uses established libraries (`cryptography`,
+`PyJWT`, `rfc8785`) — no primitives were hand-rolled. The architecture, the
+correction-surface design, and the framing are the author's.
 
 ## References
 
-- NANDA Index — arXiv:2507.14263 (v0.3)
+Protocol & standards:
+- NANDA Index — arXiv:2507.14263 (v0.3) — the protocol this prototype implements
 - RFC 8785 (JCS), RFC 8032 (Ed25519), RFC 8037 (OKP JWK)
 - W3C Verifiable Credentials Data Model 2.0; Securing VCs with JOSE/COSE; did:key
 - Google A2A Agent Card; OpenID AuthZEN Authorization API 1.0 (Final, Jan 2026),
-  AARP & COAZ Working Group Drafts (15 June 2026)
+  AARP & COAZ Working Group Drafts (15 June 2026); OAuth Transaction Tokens
+  (draft-ietf-oauth-transaction-tokens) and Transaction Tokens for Agents
+  (draft-araut-oauth-transaction-tokens-for-agents) — operator-side authorisation (context)
+
+Background (the correction-surface framing):
+- A. Aravind, *Corrigibility as a Structural Precondition for Digital Public
+  Infrastructure: A Cybernetic Framework* — doi:10.2139/ssrn.6059075
+- A. Aravind, *Epistemic Capture and the Action Boundary: Corrigibility for Learned
+  and Agentic Public Infrastructure* — doi:10.2139/ssrn.6669318
+- See `CITATION.cff` to cite this implementation.
 ```

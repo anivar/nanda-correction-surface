@@ -1,0 +1,79 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it and the references below."
+title: "NANDA Index prototype — resolution and the correction surface"
+abstract: >-
+  A runnable prototype of the NANDA Index resolution flow (arXiv:2507.14263) with a
+  protocol-layer extension: the affected-party correction surface — a signed
+  contestation channel and a self-sovereign exit (severance) primitive — on a
+  substrate-neutral, self-certifying (did:key) identity layer.
+authors:
+  - family-names: Aravind
+    given-names: Anivar
+    email: ping@anivar.net
+license: MIT
+version: '0.1.0'
+repository-code: 'https://github.com/anivar/nanda-correction-surface'
+keywords:
+  - AI agents
+  - agent identity
+  - verifiable credentials
+  - did:key
+  - NANDA
+  - correction surface
+  - zero-trust agentic access
+references:
+  - type: article
+    title: "Corrigibility as a Structural Precondition for Digital Public Infrastructure: A Cybernetic Framework"
+    authors:
+      - family-names: Aravind
+        given-names: Anivar
+    doi: 10.2139/ssrn.6059075
+    year: 2026
+  - type: article
+    title: "Epistemic Capture and the Action Boundary: Corrigibility for Learned and Agentic Public Infrastructure"
+    authors:
+      - family-names: Aravind
+        given-names: Anivar
+    doi: 10.2139/ssrn.6669318
+    year: 2026
+  - type: article
+    title: "Beyond DNS: Unlocking the Internet of AI Agents via the NANDA Index and Verified AgentFacts"
+    year: 2025
+    notes: "arXiv:2507.14263 — the protocol this prototype implements (core resolution substrate)."
+    authors:
+      - family-names: Raskar
+        given-names: Ramesh
+      - family-names: Chari
+        given-names: Pradyumna
+      - family-names: Zinky
+        given-names: John
+      - family-names: Lambe
+        given-names: Mahesh
+      - family-names: Grogan
+        given-names: Jared James
+      - family-names: Wang
+        given-names: Sichao
+      - family-names: Ranjan
+        given-names: Rajesh
+      - family-names: Singhal
+        given-names: Rekha
+      - family-names: Gupta
+        given-names: Shailja
+      - family-names: Lincourt
+        given-names: Robert
+      - family-names: Bala
+        given-names: Raghu
+      - family-names: Joshi
+        given-names: Aditi
+      - family-names: Singh
+        given-names: Abhishek
+      - family-names: Chopra
+        given-names: Ayush
+      - family-names: Stripelis
+        given-names: Dimitris
+      - family-names: B
+        given-names: Bhuwan
+      - family-names: Kumar
+        given-names: Sumit
+      - family-names: Gorskikh
+        given-names: Maria

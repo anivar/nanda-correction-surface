@@ -10,7 +10,7 @@ import jwt as pyjwt
 
 from client import console as C
 from client.resolver import NandaClient, VerificationFailure
-from nanda_core import config
+from nanda_core import config, crypto
 from nanda_core.keystore import Identity
 from nanda_core.trust import TrustPolicy
 
@@ -51,10 +51,15 @@ def main() -> None:
     client.resolve(name, act=False)
     print(C.ok("baseline: resolves before revocation\n"))
 
-    # Revoke the provider credential by its id (read unverified, just to get the id).
+    # Revoke the provider credential — the PROVIDER (its issuer) authorises this by
+    # signing the credential id with its own key. No one else can revoke it.
     cred_id = pyjwt.decode(bundle["provider_vc"], options={"verify_signature": False})["id"]
-    X.post_json(f"{config.INDEX_URL}/revoke", {"credential_id": cred_id})
-    print(C.ok(f"revoked provider credential {cred_id}"))
+    signature = crypto.b64u_encode(provider.sign(cred_id.encode()))
+    X.post_json(
+        f"{config.INDEX_URL}/revoke",
+        {"credential_id": cred_id, "issuer_did": provider.did, "signature": signature},
+    )
+    print(C.ok(f"revoked provider credential {cred_id} (issuer-signed)"))
 
     print(C.bold("\nRe-resolving after revocation:"))
     try:

@@ -141,7 +141,7 @@ class FactsBundle(BaseModel):
     severance: dict | None = None
 
 
-# --- Level 2 extension: the contestation (affected-party counter-claim) --------
+# --- Extension: the contestation (affected-party counter-claim) --------
 
 
 class InteractionReceipt(BaseModel):

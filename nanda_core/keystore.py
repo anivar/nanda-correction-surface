@@ -5,7 +5,7 @@ method, plus a `sign()` shortcut. Issuers (provider, auditor), agents and
 affected parties are all just Identities with different roles.
 
 Persistence here is deliberately minimal — base64 seed files / JSON — because the
-brief asks for a prototype, not a key-management product. Secrets live only under
+this is a prototype, not a key-management product. Secrets live only under
 the gitignored `shared/` directory.
 """
 

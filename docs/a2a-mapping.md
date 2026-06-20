@@ -35,7 +35,7 @@ gaps the paper targets:
   from the agent's domain. A2A has no equivalent.
 - **TTL-scoped routing.** static / rotating / adaptive endpoints with TTLs, vs a
   single `url` assumed stable.
-- **Revocation** (stubbed here) and **contestations** (the Level-2 return channel).
+- **Revocation** (stubbed here) and **contestations** (the correction-surface return channel).
 
 The reverse direction is the upgrade story: a plain A2A card can be wrapped as an
 AgentFacts credentialSubject and gain all of the above without changing the

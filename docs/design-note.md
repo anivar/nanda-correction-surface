@@ -1,9 +1,34 @@
 # Design note
 
-This is the "why" behind the prototype: the verification choices, the Level-2
-extension, and where it sits in the wider standards landscape. The brief says
-choosing the verification point is part of the exercise — so this is where I make
-that reasoning explicit.
+This is the "why" behind the prototype: the verification choices, the correction-
+surface extension, and where it sits in the wider standards landscape. Choosing the
+verification point is a deliberate design decision — this is where I make that
+reasoning explicit.
+
+## 0. The layered model (what is built vs. cited vs. out of scope)
+
+| Layer | What | Status |
+|---|---|---|
+| **CORE** — NANDA paper | `index → AgentAddr → AgentFacts`, verified hop-by-hop, fail closed | **built** (faithful to arXiv:2507.14263) |
+| **EXTENSION** — the correction surface | affected-party **contestation** + self-sovereign **exit (severance)** on a substrate-neutral (did:key) identity | **built** (this contribution) |
+| **CONTEXT** — operator-side authorisation | AuthZEN · AARP/COAZ · OAuth Transaction Tokens (incl. *for-agents*) — *may this action proceed?* | **cited, not wired** |
+| **INSTITUTION** | an authority that can *compel correction*; *remedy* | **named, out of scope** — "not a protocol" |
+
+The operator-side authorisation surface answers *who may act, on what authority,
+within what bounds, and is that still fresh* — and matures quickly (delegation
+layers, mission lifecycle, chain attenuation, transaction tokens). The party an
+agent **acts upon** holds no instrument in any of it. The **correction surface** is
+that missing return path, built here at the protocol layer; the institutional half
+(compel-correction, remedy) is named honestly as an institution, not a credential.
+
+**Exit as a first-class primitive.** Identity is self-certifying `did:key` — the
+*minimum trust surface*, with no external/central resolution or anchor required.
+Because there is no upstream endpoint to petition, the holder can **sever** its own
+identity (severance, signed by its own key): prior authority becomes inexecutable
+on the subject's say-so, and a successor identity lets it re-participate on fair
+terms. Revocation (expiry / status list) lapses authority; **exit ends the binding.**
+
+The framing of this contribution is developed in the references at the end.
 
 ## 1. Verification: match the mechanism to the tier's volatility
 
@@ -40,9 +65,9 @@ stance: plural issuers, each independently verifiable, no mandatory root. A
 production deployment could mix `did:web` (domain-anchored issuers) without
 changing the verification code.
 
-## 2. Level 2 — the contestation dual (the half the paper leaves out)
+## 2. The correction surface — contestation & exit (the half the paper leaves out)
 
-The required Level-1 core was built and passing end-to-end first; the
+The core resolution flow was built and verified end-to-end first; the
 contestation record was scoped on top of it.
 
 AgentFacts is a **one-way** trust object. Read the stack by *who holds the lever*
@@ -50,7 +75,7 @@ at each layer:
 
 ```
   CORRECTION / AFFECTED-PARTY        lever: the governed party   ← ABSENT in the paper
-  (contest, counter-attest)          ← THIS IS LEVEL 2
+  (contest, counter-attest)          ← THIS IS THE EXTENSION
   ----------------------------------------------------------------
   AUTHORISATION (AuthZEN)            lever: PDP operator + approver   [context only]
   ----------------------------------------------------------------
@@ -110,10 +135,26 @@ principled primitive well rather than three integrations half-done.)
   resolved it. Production would add Tor/IPFS/mix-net hosting and request batching.
 - **Standing is stubbed.** A hostile agent could withhold receipts. Production
   standing would use a mutually-signed interaction log or a third-party notary.
-- **Revocation is stubbed** as a credential-id set checked client-side, not a
+- **Revocation is a stub** — issuer-signed entries served by the index and verified
+  client-side (only a credential's *own* trusted issuer can revoke it), not a full
   Bitstring Status List service.
 - **State is in-memory** per service — register then resolve in one run. No
   persistence layer, no CRDT cross-registry federation (out of scope per the paper
   appendix).
 - **The agent runtime is a trivial stand-in** — the point is the resolution and
   trust path, not the agent's cleverness.
+
+## References
+
+The correction-surface framing (the affected-party return path, exit as a
+structural property, and the operator-side vs. governed-side distinction) draws on:
+
+- A. Aravind, *Corrigibility as a Structural Precondition for Digital Public
+  Infrastructure: A Cybernetic Framework* — doi:10.2139/ssrn.6059075
+- A. Aravind, *Epistemic Capture and the Action Boundary: Corrigibility for Learned
+  and Agentic Public Infrastructure* — doi:10.2139/ssrn.6669318
+
+Protocol/standards context (cited, not wired): NANDA Index (arXiv:2507.14263);
+W3C VC Data Model 2.0 + JOSE/COSE; did:key; OpenID AuthZEN Authorization API 1.0
+with the AARP & COAZ profiles; OAuth Transaction Tokens and the *Transaction Tokens
+for Agents* draft. `CITATION.cff` carries the machine-readable citation.

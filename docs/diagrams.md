@@ -59,7 +59,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-  subgraph PAPER["NANDA paper — the substrate (TASK)"]
+  subgraph PAPER["NANDA paper — the substrate (CORE)"]
     P1["Tier 1 — lean index"]
     P2["Tier 2 — AgentFacts (W3C VCs)"]
     P3["Tier 3 — endpoint"]
@@ -68,7 +68,7 @@ flowchart TB
     E1["Contestation<br/>affected-party signed counter-claim"]
     E2["Self-sovereign exit<br/>severance / key rotation"]
   end
-  subgraph CTX["Operator-side authorization — CONTEXT (cited, not wired)"]
+  subgraph CTX["Operator-side authorisation — CONTEXT (cited, not wired)"]
     X1["AuthZEN · AARP · COAZ"]
     X2["Transaction Tokens for Agents"]
   end

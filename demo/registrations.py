@@ -1,6 +1,6 @@
 """Step 7 — registration-type mixing: native + enterprise-routed + DID-based.
 
-The brief notes mixing registration types belongs in Level 2. The index is a quilt
+Mixing registration types is an extension on top of the core. The index is a quilt
 (paper Table 1): a NANDA-native entry points straight at the facts; an
 enterprise-routed entry takes one extra hop through a registry; a DID-based entry
 is resolved by the agent's own DID. Run via `python -m demo.registrations`.

@@ -120,7 +120,7 @@ def new_agent_id() -> str:
     return f"nanda:{uuid.uuid4()}"
 
 
-# --- helpers shared by the Level-2 extension demos ----------------------------
+# --- helpers shared by the correction-surface extension demos ----------------------------
 
 
 def load_issuers() -> tuple[Identity, Identity]:

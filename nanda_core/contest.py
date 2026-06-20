@@ -1,4 +1,4 @@
-"""Level 2 — the contestation dual: the affected-party half of the trust object.
+"""The correction surface — contestation: the affected-party half of the trust object.
 
 The paper's AgentFacts is one-way: issuers attest *to* the agent, and nothing
 carries a claim back from the party the agent acts *upon*. Every lever in the
