@@ -1,0 +1,9 @@
+# Pinned for reproducible `docker compose up`. Versions verified on Python 3.12.
+fastapi==0.138.0
+uvicorn[standard]==0.49.0
+cryptography==49.0.0          # Ed25519 sign/verify (PyCA, libsodium/OpenSSL-backed)
+PyJWT==2.13.0                 # JWT-VC (vc-jose-cose) issuance/verification, EdDSA
+rfc8785==0.1.4               # RFC 8785 JSON Canonicalisation Scheme (Trail of Bits)
+base58==2.1.1                # did:key multibase (base58btc) encoding
+httpx==0.28.1               # resolver client
+pydantic==2.13.4           # schema models

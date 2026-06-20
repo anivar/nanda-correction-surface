@@ -1,0 +1,83 @@
+# NANDA Index prototype — full system.
+#
+#   docker compose up --build -d                 # bring up index + 2 facts hosts + agent runtime
+#   docker compose --profile demo run --rm demo  # run the end-to-end demo against them
+#
+# The three NANDA tiers map onto services:
+#   index          -> Tier 1, the lean index (serves signed AgentAddr)
+#   facts-primary  -> Tier 2, AgentFacts on the provider's own domain   (primary_facts_url)
+#   facts-neutral  -> Tier 2, AgentFacts on a neutral host (privacy path, private_facts_url)
+#   agent          -> Tier 3, the live agent endpoint the client finally acts on
+#
+# facts-primary and facts-neutral run the SAME image: neutrality is about who operates
+# the host and that the requester is hidden from the agent's domain, not different software.
+
+x-common: &common
+  build: .
+  restart: unless-stopped
+  volumes:
+    - ./shared:/app/shared
+
+services:
+  index:
+    <<: *common
+    command: uvicorn index.app:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  facts-primary:
+    <<: *common
+    command: uvicorn facts.app:app --host 0.0.0.0 --port 8000
+    environment:
+      HOST_ROLE: primary
+      HOST_LABEL: "Provider-hosted Primary Facts"
+    ports: ["8001:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  facts-neutral:
+    <<: *common
+    command: uvicorn facts.app:app --host 0.0.0.0 --port 8000
+    environment:
+      HOST_ROLE: neutral
+      HOST_LABEL: "Neutral Third-Party Host (privacy path)"
+    ports: ["8002:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  agent:
+    <<: *common
+    command: uvicorn agent.app:app --host 0.0.0.0 --port 8000
+    ports: ["8003:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  # One-shot end-to-end demo. Run with: docker compose --profile demo run --rm demo
+  demo:
+    <<: *common
+    restart: "no"
+    profiles: ["demo"]
+    environment:
+      INDEX_URL: http://index:8000
+      FACTS_PRIMARY_URL: http://facts-primary:8000
+      FACTS_NEUTRAL_URL: http://facts-neutral:8000
+      AGENT_URL: http://agent:8000
+    command: python -m demo.run_all
+    depends_on:
+      index: { condition: service_healthy }
+      facts-primary: { condition: service_healthy }
+      facts-neutral: { condition: service_healthy }
+      agent: { condition: service_healthy }

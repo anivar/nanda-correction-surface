@@ -1,0 +1,21 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Runtime-generated keys, trust policy and registry state (created by the demo)
+shared/
+
+# Source documents kept out of the public repo
+#  - the paper is on arXiv (linked in the README)
+#  - the skills matrix is submitted separately, never committed
+*.pdf
+*.xlsx
+
+# OS / editor
+.DS_Store
+*.swp
