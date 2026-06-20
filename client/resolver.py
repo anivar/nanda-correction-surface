@@ -22,7 +22,7 @@ from typing import Optional
 
 import httpx
 
-from nanda_core import crypto, vc
+from nanda_core import contest, crypto, vc
 from nanda_core.didkey import decode_did_key
 from nanda_core.trust import TrustPolicy
 from . import console as C
@@ -180,13 +180,28 @@ class NandaClient:
             self._say(C.ok("trust threshold met (all required issuers verified)"))
 
     def _surface_contestations(self, bundle: dict, agent_did: str) -> list:
-        contestations = bundle.get("contestations", []) or []
-        if not contestations:
+        """Verify and surface affected-party counter-claims NEXT TO the issuer
+        claims. The client never silently drops a contestation that has standing,
+        and never trusts one that does not — both halves of the trust object are
+        shown to the caller."""
+        raw = bundle.get("contestations", []) or []
+        if not raw:
             self._say(C.info("none on record"))
-        else:
-            self._say(C.warn(f"{len(contestations)} contestation(s) attached "
-                             f"(verified and surfaced in Level 2)"))
-        return contestations
+            return []
+        surfaced = []
+        for c in raw:
+            verdict = contest.verify_contestation(c, expected_agent_did=agent_did)
+            if verdict.valid:
+                self._say(C.warn(f"CONTESTED [{verdict.category}] by {verdict.contestant}"))
+                self._say(C.info(f"“{verdict.statement}”"))
+                self._say(C.info(f"standing: {verdict.reason}"))
+                surfaced.append(verdict)
+            else:
+                self._say(C.info(f"ignored unverifiable contestation: {verdict.reason}"))
+        if surfaced:
+            self._say(C.warn(f"{len(surfaced)} verified contestation(s) surfaced "
+                             f"alongside the issuers' claims"))
+        return surfaced
 
     def _act(self, subject: dict) -> tuple[Optional[str], Optional[dict]]:
         endpoints = (subject.get("endpoints") or {}).get("static") or []
