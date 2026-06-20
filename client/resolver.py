@@ -71,7 +71,7 @@ class NandaClient:
         self._say(C.info(f"primary_facts_url  {signed_addr.get('primary_facts_url')}"))
         self._say(C.info(f"private_facts_url  {signed_addr.get('private_facts_url')}"))
         self._say(C.info(f"ttl                {signed_addr.get('ttl')}s"))
-        self._verify_agentaddr(signed_addr)
+        self.verify_agentaddr(signed_addr)
 
         # Hop 2 — choose the facts URL for the requested path
         self._say(C.hop(2, "Select AgentFacts source"))
@@ -123,7 +123,9 @@ class NandaClient:
         )
 
     # --- hop helpers ----------------------------------------------------------
-    def _verify_agentaddr(self, signed: dict) -> None:
+    def verify_agentaddr(self, signed: dict) -> None:
+        """Verify a signed AgentAddr against the pinned resolver. Public so the
+        tamper demo can feed it a mutated record. Raises VerificationFailure."""
         proof = signed.get("proof") or {}
         signer_did = str(proof.get("verificationMethod", "")).split("#", 1)[0]
         # Pin: a valid signature is not enough — it must be the EXPECTED resolver.
