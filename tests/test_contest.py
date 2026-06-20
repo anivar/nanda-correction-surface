@@ -6,7 +6,8 @@ from nanda_core.keystore import Identity
 def _setup():
     agent = Identity.generate("agent")
     party = Identity.generate("affected-party")
-    receipt, iid = contest.mint_interaction_receipt(agent, party.did, "ordered refund, not honoured")
+    receipt, iid = contest.mint_interaction_receipt(agent, "nanda:1", party.did,
+                                                    "ordered refund, not honoured")
     c = contest.file_contestation(
         party, agent_id="nanda:1", agent_did=agent.did, interaction_id=iid,
         statement="Agent did not honour the agreed refund within SLA.", receipt=receipt,
@@ -53,7 +54,8 @@ def test_no_standing_without_matching_receipt():
     agent = Identity.generate("agent")
     party = Identity.generate("party")
     other = Identity.generate("other-party")
-    receipt, iid = contest.mint_interaction_receipt(agent, other.did, "interaction with someone else")
+    receipt, iid = contest.mint_interaction_receipt(agent, "nanda:1", other.did,
+                                                    "interaction with someone else")
     c = contest.file_contestation(
         party, agent_id="nanda:1", agent_did=agent.did, interaction_id=iid,
         statement="I wish to contest.", receipt=receipt,
@@ -65,9 +67,7 @@ def test_no_standing_without_matching_receipt():
 def test_forged_receipt_not_signed_by_agent():
     agent = Identity.generate("agent")
     party = Identity.generate("party")
-    fake_agent = Identity.generate("fake-agent-key")
-    # Receipt minted with a key that is NOT the agent's, but claims the agent's did.
-    receipt, iid = contest.mint_interaction_receipt(agent, party.did, "real")
+    receipt, iid = contest.mint_interaction_receipt(agent, "nanda:1", party.did, "real")
     receipt["summary"] = "tampered"  # break the agent's signature
     c = contest.file_contestation(
         party, agent_id="nanda:1", agent_did=agent.did, interaction_id=iid,
@@ -75,3 +75,20 @@ def test_forged_receipt_not_signed_by_agent():
     )
     v = contest.verify_contestation(c, expected_agent_did=agent.did)
     assert v.valid is False and "receipt" in v.reason
+
+
+def test_contestation_grafted_onto_other_registry_entry_is_rejected():
+    # A contestation valid for nanda:1 must not be accepted when resolving nanda:2,
+    # even though both share the same agent did.
+    agent = Identity.generate("agent")
+    party = Identity.generate("party")
+    receipt, iid = contest.mint_interaction_receipt(agent, "nanda:1", party.did, "job")
+    c = contest.file_contestation(
+        party, agent_id="nanda:1", agent_did=agent.did, interaction_id=iid,
+        statement="dispute", receipt=receipt,
+    )
+    assert contest.verify_contestation(c, expected_agent_did=agent.did,
+                                       expected_agent_id="nanda:1").valid is True
+    grafted = contest.verify_contestation(c, expected_agent_did=agent.did,
+                                          expected_agent_id="nanda:2")
+    assert grafted.valid is False

@@ -106,7 +106,8 @@ class NandaClient:
 
         # Hop 6 — surface contestations (Level 2; full verification added there)
         self._say(C.hop(6, "Surface contestations (affected-party claims)"))
-        contestations = self._surface_contestations(bundle, subject.get("id"))
+        contestations = self._surface_contestations(
+            bundle, subject.get("id"), signed_addr.get("agent_id"))
 
         # Hop 7 — act on the verified endpoint
         endpoint, action = None, None
@@ -179,18 +180,28 @@ class NandaClient:
         if self.policy.required_issuers:
             self._say(C.ok("trust threshold met (all required issuers verified)"))
 
-    def _surface_contestations(self, bundle: dict, agent_did: str) -> list:
+    def _surface_contestations(self, bundle: dict, agent_did: str,
+                               agent_id: str | None = None) -> list:
         """Verify and surface affected-party counter-claims NEXT TO the issuer
         claims. The client never silently drops a contestation that has standing,
         and never trusts one that does not — both halves of the trust object are
         shown to the caller."""
-        raw = bundle.get("contestations", []) or []
+        # De-duplicate by contestation_id so a replayed POST can't amplify one
+        # complaint into an apparent flood.
+        raw, seen = [], set()
+        for c in (bundle.get("contestations") or []):
+            cid = c.get("contestation_id")
+            if cid in seen:
+                continue
+            seen.add(cid)
+            raw.append(c)
         if not raw:
             self._say(C.info("none on record"))
             return []
         surfaced = []
         for c in raw:
-            verdict = contest.verify_contestation(c, expected_agent_did=agent_did)
+            verdict = contest.verify_contestation(
+                c, expected_agent_did=agent_did, expected_agent_id=agent_id)
             if verdict.valid:
                 self._say(C.warn(f"CONTESTED [{verdict.category}] by {verdict.contestant}"))
                 self._say(C.info(f"“{verdict.statement}”"))

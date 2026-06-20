@@ -112,6 +112,12 @@ def verify_credential(
     except jwt.PyJWTError as exc:
         raise VCError(f"malformed JWT header: {exc}") from exc
 
+    # Reject anything that is not typed as a VC JWT, to stop a non-VC JWT signed
+    # by the same key (an access token, an A2A message) being replayed as a
+    # credential (vc-jose-cose cross-type confusion).
+    if header.get("typ") != JWT_VC_TYP:
+        raise VCError(f"wrong token type {header.get('typ')!r}, expected {JWT_VC_TYP!r}")
+
     kid = header.get("kid")
     if not kid:
         raise VCError("credential has no kid (issuer key) in header")
@@ -135,9 +141,18 @@ def verify_credential(
 
     now = now or _now()
     vf, vu = vc.get("validFrom"), vc.get("validUntil")
-    if vf and now < _parse_iso(vf):
+    # Policy: NANDA emphasises short-lived, bounded credentials (and sub-second
+    # revocation), so our verifier REQUIRES a validity window and enforces it
+    # fail-closed. This is deliberately stricter than VCDM 2.0, which makes
+    # validUntil optional (omitting it would mean "no expiry") — we reject that
+    # for AgentFacts rather than accept an unbounded credential.
+    if not vf:
+        raise VCError("credential missing validFrom")
+    if not vu:
+        raise VCError("credential missing validUntil (unbounded credentials rejected by policy)")
+    if now < _parse_iso(vf):
         raise VCError("credential not yet valid (validFrom in the future)")
-    if vu and now > _parse_iso(vu):
+    if now > _parse_iso(vu):
         raise VCError("credential expired (past validUntil)")
 
     return vc

@@ -31,7 +31,7 @@ def main() -> None:
 
     # 1. The agent acknowledges it interacted with this party (the standing anchor).
     receipt, interaction_id = contest.mint_interaction_receipt(
-        agent, party.did, summary="summarisation job #4471")
+        agent, target["agent_id"], party.did, summary="summarisation job #4471")
     print(C.ok("interaction receipt minted (signed by the AGENT's key)"))
     print(C.info(f"interaction_id {interaction_id}"))
 

@@ -1,6 +1,7 @@
 """Tests for the Tier-2 Verifiable Credential layer (JWT-VC / vc-jose-cose)."""
 import datetime as dt
 
+import jwt as pyjwt
 import pytest
 
 from nanda_core import vc
@@ -73,3 +74,33 @@ def test_auditor_credential_is_independent():
     assert cred["issuer"] == auditor.did
     assert cred["credentialSubject"]["evaluations"]["performanceScore"] == 4.8
     assert "AgentAuditCredential" in cred["type"]
+
+
+def _raw_vc(issuer: Identity, *, typ: str, with_until: bool) -> str:
+    payload = {
+        "@context": [vc.VC_CONTEXT_V2],
+        "type": ["VerifiableCredential"],
+        "issuer": issuer.did,
+        "validFrom": "2020-01-01T00:00:00Z",
+        "credentialSubject": {"id": issuer.did},
+    }
+    if with_until:
+        payload["validUntil"] = "2999-01-01T00:00:00Z"
+    return pyjwt.encode(payload, issuer.private_key, algorithm="EdDSA",
+                        headers={"typ": typ, "kid": issuer.verification_method})
+
+
+def test_non_vc_jwt_rejected_by_typ():
+    # A JWT from a trusted issuer but typed as a plain JWT must not pass as a VC.
+    issuer = Identity.generate("provider")
+    token = _raw_vc(issuer, typ="JWT", with_until=True)
+    with pytest.raises(vc.VCError, match="token type"):
+        vc.verify_credential(token, trusted_issuers={issuer.did})
+
+
+def test_unbounded_credential_rejected():
+    # Missing validUntil -> rejected by our bounded-validity policy.
+    issuer = Identity.generate("provider")
+    token = _raw_vc(issuer, typ=vc.JWT_VC_TYP, with_until=False)
+    with pytest.raises(vc.VCError, match="validUntil"):
+        vc.verify_credential(token, trusted_issuers={issuer.did})

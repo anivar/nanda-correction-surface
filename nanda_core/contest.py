@@ -34,13 +34,17 @@ from .keystore import Identity
 from .models import Contestation, InteractionReceipt
 
 
-def mint_interaction_receipt(agent: Identity, counterparty_did: str, summary: str = "") -> tuple[dict, str]:
+def mint_interaction_receipt(agent: Identity, agent_id: str, counterparty_did: str,
+                             summary: str = "") -> tuple[dict, str]:
     """The agent acknowledges an interaction with `counterparty_did`. Returns the
-    signed receipt and its interaction id. In a real deployment the agent endpoint
-    would issue this at interaction time; here the demo mints it."""
+    signed receipt and its interaction id. The receipt binds BOTH the agent's
+    did:key and its registry handle (agent_id), so it cannot be replayed as
+    standing for a different registry entry that happens to share the key. In a
+    real deployment the agent endpoint would issue this at interaction time."""
     interaction_id = f"int:{uuid.uuid4()}"
     body = InteractionReceipt(
         interaction_id=interaction_id,
+        agent_id=agent_id,
         agent_did=agent.did,
         counterparty=counterparty_did,
         summary=summary,
@@ -86,9 +90,14 @@ class ContestationVerdict:
     category: Optional[str] = None
 
 
-def verify_contestation(contestation: dict, *, expected_agent_did: str) -> ContestationVerdict:
+def verify_contestation(contestation: dict, *, expected_agent_did: str,
+                        expected_agent_id: Optional[str] = None) -> ContestationVerdict:
     """Verify a contestation's signature AND its standing. Fails closed: any check
-    that does not pass yields valid=False with a reason."""
+    that does not pass yields valid=False with a reason.
+
+    `expected_agent_id` (the resolved registry handle) is checked when supplied,
+    so a contestation legitimately filed against one registry entry cannot be
+    grafted onto another that merely shares the same key."""
     contestant = contestation.get("contestant")
     statement = contestation.get("statement")
     interaction_id = contestation.get("interaction_id")
@@ -118,13 +127,18 @@ def verify_contestation(contestation: dict, *, expected_agent_did: str) -> Conte
     except ValueError as exc:
         return bad(f"bad agent did:key on receipt: {exc}")
 
-    # 3. Standing: the receipt must bind this contestant to this interaction.
+    # 3. Standing: the receipt must bind this contestant to this interaction,
+    #    and to this exact agent (did AND registry handle).
     if receipt.get("counterparty") != contestant:
         return bad("receipt counterparty does not match contestant (no standing)")
     if receipt.get("interaction_id") != interaction_id:
         return bad("receipt interaction_id does not match contestation")
     if contestation.get("agent_did") != expected_agent_did:
         return bad("contestation agent_did does not match resolved agent")
+    if receipt.get("agent_id") != contestation.get("agent_id"):
+        return bad("receipt agent_id does not match contestation (no standing for this registry entry)")
+    if expected_agent_id is not None and contestation.get("agent_id") != expected_agent_id:
+        return bad("contestation agent_id does not match resolved agent")
 
     return ContestationVerdict(True, "verified: signed by contestant with acknowledged standing",
                                contestant, statement, interaction_id, category)

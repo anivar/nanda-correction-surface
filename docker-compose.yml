@@ -15,14 +15,13 @@
 x-common: &common
   build: .
   restart: unless-stopped
-  volumes:
-    - ./shared:/app/shared
 
 services:
   index:
     <<: *common
     command: uvicorn index.app:app --host 0.0.0.0 --port 8000
     ports: ["8000:8000"]
+    volumes: ["./shared:/app/shared"]   # only the index persists state (resolver key)
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
       interval: 3s
@@ -76,6 +75,7 @@ services:
       FACTS_NEUTRAL_URL: http://facts-neutral:8000
       AGENT_URL: http://agent:8000
     command: python -m demo.run_all
+    volumes: ["./shared:/app/shared"]   # demo writes trust_policy.json + demo_state.json
     depends_on:
       index: { condition: service_healthy }
       facts-primary: { condition: service_healthy }

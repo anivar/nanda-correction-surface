@@ -124,6 +124,7 @@ class InteractionReceipt(BaseModel):
     the agent's own key, so it cannot be fabricated by the contestant. This is the
     (stubbed) standing primitive: it binds a counter-claim to a real interaction."""
     interaction_id: str
+    agent_id: str              # the registry handle (nanda:<uuid>) the interaction was with
     agent_did: str
     counterparty: str          # the affected party's did:key
     summary: str = ""

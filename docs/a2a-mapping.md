@@ -18,7 +18,7 @@ AgentFacts `credentialSubject` down to a standard
 | `provider.organization/url` | `provider.name` / `provider.url`                   |
 | `capabilities.streaming`    | `capabilities.streaming`                           |
 | `defaultInputModes`/`OutputModes` | `capabilities.modalities`                    |
-| `skills[]`                  | `skills[]` (id, description, input/output modes)   |
+| `skills[]`                  | `skills[]` (id, name [= id], description, input/output modes) |
 | `securitySchemes`/`security`| `capabilities.authentication.methods` / `requiredScopes` |
 
 ## What NANDA adds on top (the "super" in superset)

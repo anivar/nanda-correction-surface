@@ -47,10 +47,15 @@ start agent   agent.app:app 8003
 
 # --- wait for health ----------------------------------------------------------
 for url in localhost:8000 localhost:8001 localhost:8002 localhost:8003; do
+  ok=false
   for _ in $(seq 1 40); do
-    if curl -sf "http://${url}/healthz" >/dev/null 2>&1; then break; fi
+    if curl -sf "http://${url}/healthz" >/dev/null 2>&1; then ok=true; break; fi
     sleep 0.25
   done
+  if ! $ok; then
+    echo "ERROR: ${url} did not become healthy after 10s; see /tmp/nanda_*.log" >&2
+    exit 1
+  fi
 done
 echo "services healthy."; echo
 

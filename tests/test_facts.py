@@ -34,3 +34,13 @@ def test_append_contestation():
     assert r.status_code == 200 and r.json()["contestations"] == 1
     got = client.get(f"/facts/{AGENT_ID}").json()
     assert got["contestations"][0]["contestation_id"] == "c1"
+
+
+def test_contestation_dedup_by_id():
+    client.put(f"/facts/{AGENT_ID}", json=BUNDLE)   # resets contestations
+    c = {"contestation_id": "dup1", "x": 1}
+    client.post(f"/facts/{AGENT_ID}/contestations", json=c)
+    r2 = client.post(f"/facts/{AGENT_ID}/contestations", json=c)
+    assert r2.json().get("duplicate") is True
+    got = client.get(f"/facts/{AGENT_ID}").json()
+    assert sum(1 for x in got["contestations"] if x.get("contestation_id") == "dup1") == 1

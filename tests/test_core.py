@@ -43,6 +43,14 @@ def test_missing_proof_fails_closed():
     assert crypto.verify_record({"ttl": 3600}, priv.public_key()) is False
 
 
+def test_wrong_length_signature_fails_closed():
+    # A valid-base64 but wrong-length signature must return False, not raise.
+    priv = crypto.generate_private_key()
+    signed = crypto.sign_record({"ttl": 3600}, priv)
+    signed["proof"]["sig"] = crypto.b64u_encode(b"too-short")
+    assert crypto.verify_record(signed, priv.public_key()) is False
+
+
 def test_did_key_roundtrip_and_prefix():
     priv = crypto.generate_private_key()
     did = didkey.did_from_private(priv)

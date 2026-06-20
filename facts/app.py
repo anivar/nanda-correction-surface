@@ -66,5 +66,12 @@ def add_contestation(agent_id: str, contestation: dict):
     bundle = _store.get(agent_id)
     if bundle is None:
         raise HTTPException(status_code=404, detail=f"no AgentFacts hosted for {agent_id!r}")
-    bundle.setdefault("contestations", []).append(contestation)
-    return {"ok": True, "agent_id": agent_id, "contestations": len(bundle["contestations"])}
+    contestations = bundle.setdefault("contestations", [])
+    # Idempotent on contestation_id: re-POSTing the same signed claim must not
+    # amplify it into many apparent complaints.
+    cid = contestation.get("contestation_id")
+    if any(c.get("contestation_id") == cid for c in contestations):
+        return {"ok": True, "duplicate": True, "agent_id": agent_id,
+                "contestations": len(contestations)}
+    contestations.append(contestation)
+    return {"ok": True, "agent_id": agent_id, "contestations": len(contestations)}
