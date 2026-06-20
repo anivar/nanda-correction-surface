@@ -101,6 +101,7 @@ def main() -> dict:
             {
                 "agent_id": agent_id,
                 "agent_name": spec["agent_name"],
+                "agent_did": agent.did,
                 "primary_facts_url": primary_url,
                 "private_facts_url": private_url,
                 "ttl": 3600,

@@ -13,10 +13,17 @@ Layering (see the paper, §III–V):
 
 from __future__ import annotations
 
+import datetime as dt
+
 from pydantic import BaseModel, Field
 
 from . import crypto
 from .keystore import Identity
+
+
+def _utc_now_iso() -> str:
+    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 # --- Tier 1: the lean index record --------------------------------------------
 
@@ -27,16 +34,21 @@ class AgentAddr(BaseModel):
 
     agent_id: str  # globally unique machine id, e.g. nanda:<uuid>
     agent_name: str  # human URN, e.g. urn:agent:acme:translator
+    agent_did: str | None = None  # the agent's did:key — binds the signed pointer to the VC subject
     primary_facts_url: str  # AgentFacts on the provider's own domain
     private_facts_url: str | None = None  # AgentFacts on a neutral host (privacy path)
     adaptive_resolver_url: str | None = None  # optional dynamic routing (Tier 3)
     ttl: int = 3600  # cache duration, seconds
+    issued_at: str | None = None  # ISO-8601 UTC; set at sign time so ttl is enforceable
 
 
 def sign_agentaddr(addr: AgentAddr, resolver: Identity) -> dict:
-    """Produce the signed AgentAddr dict the index serves."""
+    """Produce the signed AgentAddr dict the index serves. Stamps issued_at (so the
+    signed ttl has an anchor to expire from) before signing."""
+    body = addr.model_dump()
+    body["issued_at"] = body.get("issued_at") or _utc_now_iso()
     return crypto.sign_record(
-        addr.model_dump(),
+        body,
         resolver.private_key,
         verification_method=resolver.verification_method,
     )

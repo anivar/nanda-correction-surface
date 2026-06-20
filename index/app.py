@@ -40,6 +40,7 @@ class RegisterRequest(BaseModel):
     agent_name: str
     primary_facts_url: str
     agent_id: str | None = None
+    agent_did: str | None = None
     private_facts_url: str | None = None
     adaptive_resolver_url: str | None = None
     ttl: int = 3600
@@ -82,6 +83,7 @@ def register(req: RegisterRequest):
     addr = AgentAddr(
         agent_id=agent_id,
         agent_name=req.agent_name,
+        agent_did=req.agent_did,
         primary_facts_url=req.primary_facts_url,
         private_facts_url=req.private_facts_url,
         adaptive_resolver_url=req.adaptive_resolver_url,

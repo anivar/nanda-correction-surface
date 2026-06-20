@@ -151,9 +151,13 @@ def verify_credential(
         raise VCError("credential missing validFrom")
     if not vu:
         raise VCError("credential missing validUntil (unbounded credentials rejected by policy)")
-    if now < _parse_iso(vf):
+    try:
+        vf_parsed, vu_parsed = _parse_iso(vf), _parse_iso(vu)
+    except (ValueError, TypeError) as exc:
+        raise VCError(f"credential has an unparseable validity date: {exc}") from exc
+    if now < vf_parsed:
         raise VCError("credential not yet valid (validFrom in the future)")
-    if now > _parse_iso(vu):
+    if now > vu_parsed:
         raise VCError("credential expired (past validUntil)")
 
     return vc

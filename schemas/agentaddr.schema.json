@@ -9,6 +9,18 @@
       "title": "Agent Name",
       "type": "string"
     },
+    "agent_did": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Agent Did"
+    },
     "primary_facts_url": {
       "title": "Primary Facts Url",
       "type": "string"
@@ -41,6 +53,18 @@
       "default": 3600,
       "title": "Ttl",
       "type": "integer"
+    },
+    "issued_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Issued At"
     }
   },
   "required": [

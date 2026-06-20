@@ -18,6 +18,7 @@ Both verify identically, because AgentFacts are signed by their issuers, not the
 
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass, field
 
 import httpx
@@ -56,6 +57,15 @@ class NandaClient:
         self.verbose = verbose
         self._http = httpx.Client(timeout=timeout)
 
+    def close(self) -> None:
+        self._http.close()
+
+    def __enter__(self) -> NandaClient:
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
     # --- output ---------------------------------------------------------------
     def _say(self, line: str = "") -> None:
         if self.verbose:
@@ -89,6 +99,16 @@ class NandaClient:
         self._say(C.hop(4, "Verify provider credential (W3C VC)"))
         provider_cred = self._verify_credential(bundle.get("provider_vc"), "provider")
         subject = provider_cred["credentialSubject"]
+        # Bind the verified VC subject to the signed index record: an untrusted host
+        # must not be able to serve a different agent's (validly-issued) VC here.
+        expected_did = signed_addr.get("agent_did")
+        if expected_did and subject.get("id") != expected_did:
+            self._say(
+                C.fail(
+                    f"provider VC subject {subject.get('id')} ≠ AgentAddr agent_did {expected_did}"
+                )
+            )
+            raise VerificationFailure("provider VC subject does not match the signed AgentAddr")
         self._say(C.info(f"label        {subject.get('label')}"))
         self._say(C.info(f"version      {subject.get('version')}"))
         self._say(C.info(f"skills       {[s.get('id') for s in subject.get('skills', [])]}"))
@@ -99,6 +119,14 @@ class NandaClient:
         verified_issuers = {provider_cred["issuer"]}
         if bundle.get("auditor_vc"):
             auditor_cred = self._verify_credential(bundle.get("auditor_vc"), "auditor")
+            # The auditor must be attesting the SAME subject as the provider, or the
+            # corroboration is meaningless (a host could pair a good agent's audit
+            # with a different agent's facts).
+            if auditor_cred["credentialSubject"].get("id") != subject.get("id"):
+                self._say(C.fail("auditor VC subject ≠ provider VC subject"))
+                raise VerificationFailure(
+                    "auditor VC attests a different subject than the provider VC"
+                )
             verified_issuers.add(auditor_cred["issuer"])
             ev = auditor_cred["credentialSubject"].get("evaluations", {})
             self._say(
@@ -160,6 +188,21 @@ class NandaClient:
             self._say(C.fail("AgentAddr signature INVALID — record was tampered with"))
             raise VerificationFailure("AgentAddr signature invalid")
         self._say(C.ok("AgentAddr signature valid, signed by the pinned index resolver"))
+        self._check_freshness(signed)
+
+    def _check_freshness(self, signed: dict) -> None:
+        """Honour the signed ttl using the signed issued_at anchor. Staleness is a
+        cache concern, not tampering, so we warn rather than fail closed."""
+        issued_at, ttl = signed.get("issued_at"), signed.get("ttl")
+        if not issued_at or not isinstance(ttl, int):
+            return
+        try:
+            issued = dt.datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
+        except ValueError:
+            return
+        age = int((dt.datetime.now(dt.UTC) - issued).total_seconds())
+        if age > ttl:
+            self._say(C.warn(f"AgentAddr stale (age {age}s > ttl {ttl}s) — re-resolve"))
 
     def _select_facts_url(self, signed: dict, path: str) -> tuple[str, str]:
         if path == "private":
@@ -214,8 +257,8 @@ class NandaClient:
         raw, seen = [], set()
         for c in bundle.get("contestations") or []:
             cid = c.get("contestation_id")
-            if cid in seen:
-                continue
+            if cid is None or cid in seen:
+                continue  # drop malformed (no id) so it can't poison the dedup set
             seen.add(cid)
             raw.append(c)
         if not raw:
