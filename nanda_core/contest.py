@@ -25,6 +25,7 @@ standing would use a mutually-signed interaction log or a notary — see next st
 
 from __future__ import annotations
 
+import datetime as dt
 import uuid
 from dataclasses import dataclass
 
@@ -49,7 +50,7 @@ def mint_interaction_receipt(
         agent_did=agent.did,
         counterparty=counterparty_did,
         summary=summary,
-        timestamp=vc.iso(vc._now()),
+        timestamp=vc.iso(dt.datetime.now(dt.UTC)),
     ).model_dump()
     signed = crypto.sign_record(
         body, agent.private_key, verification_method=agent.verification_method
@@ -76,7 +77,7 @@ def file_contestation(
         contestant=contestant.did,
         statement=statement,
         category=category,
-        created=vc.iso(vc._now()),
+        created=vc.iso(dt.datetime.now(dt.UTC)),
         receipt=receipt,
     ).model_dump()
     return crypto.sign_record(

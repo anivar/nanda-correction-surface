@@ -46,8 +46,20 @@ def root():
 
 @app.put("/facts/{agent_id}")
 def put_facts(agent_id: str, bundle: FactsBundle):
-    """Host (or re-host) an AgentFacts bundle for an agent."""
+    """Host (or re-host) an AgentFacts bundle for an agent.
+
+    Re-hosting must NOT erase contestations already on file: otherwise the
+    contested party could censor counter-claims simply by re-PUTting its bundle,
+    which would defeat the whole point of the contestation channel. So existing
+    contestations are preserved (and merged with any in the new bundle)."""
+    if bundle.agent_id != agent_id:
+        raise HTTPException(status_code=422, detail="body agent_id must match the URL path")
+    existing = _store.get(agent_id, {}).get("contestations", [])
     stored = bundle.model_dump()
+    seen = {c.get("contestation_id") for c in stored.get("contestations", [])}
+    for c in existing:
+        if c.get("contestation_id") not in seen:
+            stored.setdefault("contestations", []).append(c)
     _store[agent_id] = stored
     return {"ok": True, "agent_id": agent_id, "role": HOST_ROLE}
 
@@ -68,9 +80,13 @@ def add_contestation(agent_id: str, contestation: dict):
     if bundle is None:
         raise HTTPException(status_code=404, detail=f"no AgentFacts hosted for {agent_id!r}")
     contestations = bundle.setdefault("contestations", [])
+    # Require a contestation_id, else a malformed id-less POST would share the
+    # None dedup key and silently suppress every other id-less contestation.
+    cid = contestation.get("contestation_id")
+    if not cid:
+        raise HTTPException(status_code=422, detail="contestation_id is required")
     # Idempotent on contestation_id: re-POSTing the same signed claim must not
     # amplify it into many apparent complaints.
-    cid = contestation.get("contestation_id")
     if any(c.get("contestation_id") == cid for c in contestations):
         return {
             "ok": True,
