@@ -40,7 +40,7 @@
   details.intro{background:var(--panel2);border:1px solid var(--line);border-radius:11px;margin-bottom:16px;overflow:hidden}
   details.intro>summary{cursor:pointer;list-style:none;padding:12px 15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:9px}
   details.intro>summary::-webkit-details-marker{display:none}
-  details.intro>summary:focus-visible{outline:2px solid var(--paper);outline-offset:-2px}
+  details.intro>summary:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
   details.intro>summary .chev{color:var(--dim);transition:transform .15s;font-family:var(--mono)}
   details.intro[open]>summary .chev{transform:rotate(90deg)}
   .intro .body{padding:2px 16px 16px;color:var(--dim);font-size:13px}
@@ -140,16 +140,34 @@
 
     <div class="group-label">Glossary</div>
     <div class="panel" id="glossary"></div>
+
+    <div class="group-label">Further reading</div>
+    <div class="panel" id="reading">
+      <div class="gl"><span>The correction-surface idea (affected-party return path, exit as a structural property) is developed in:</span></div>
+      <div class="gl"><a href="https://doi.org/10.2139/ssrn.6059075" target="_blank" rel="noopener">Corrigibility as a Structural Precondition for Digital Public Infrastructure: A Cybernetic Framework</a></div>
+      <div class="gl"><a href="https://doi.org/10.2139/ssrn.6669318" target="_blank" rel="noopener">Epistemic Capture and the Action Boundary: Corrigibility for Learned and Agentic Public Infrastructure</a></div>
+      <div class="gl" style="margin-top:6px"><span>Protocol: <a href="https://arxiv.org/abs/2507.14263" target="_blank" rel="noopener">NANDA Index — arXiv:2507.14263</a></span></div>
+    </div>
   </aside>
 
   <main>
-    <details class="intro" id="intro" open>
+    <details class="intro" id="intro">
       <summary><span class="chev">▶</span> New here? What am I looking at?</summary>
       <div class="body">
         <p><b>NANDA is a verifiable directory for AI agents</b> — think DNS, but every answer is <b>signed</b> and the client checks each one itself, so no hop is ever acted on unverified. (Exactly one key is trusted up front: the index’s signing key, which the client <b>pins</b>.)</p>
         <p><b>How to read it:</b> pick a scenario on the left, then use the player to step through. Watch the arrows between the actors in the diagram and read the matching step below — each has a plain-English line and the exact mechanism underneath. A step’s coloured left border matches the diagram’s lines: <b style="color:var(--paper)">blue = core</b>, <b style="color:var(--ext)">amber = correction surface</b>, grey = operator context, <b style="color:var(--fail)">red = blocked</b>. The amber boundary marks the <b>correction surface</b>: the affected-party return path added on top of the paper.</p>
         <p><b>The cryptography is real</b> (nothing is mocked): the Ed25519 signing, JCS canonicalisation and Verifiable-Credential checks run in Python and are precomputed — this page renders the resulting verified trace.</p>
         <div id="map"></div>
+      </div>
+    </details>
+
+    <details class="intro" id="landscape" open>
+      <summary><span class="chev">▶</span> Where does NANDA sit? (the agent-standards landscape)</summary>
+      <div class="body">
+        <p>Read the agent stack as a <b>ladder of questions</b>. The standards answer them bottom-to-top — and stop at the same rung every time.</p>
+        <div id="plane"></div>
+        <p style="margin-top:10px"><b>Rungs 1–4</b> (who is acting · on whose behalf · why · may it continue) are well covered — together they are the <b>operator’s control surface</b>. <b>Rung 5</b> (who answers when a permitted action is wrong) is <b style="color:var(--ext)">empty across the standards corpus, by charter</b> — the <b>governed party’s correction surface</b>. <b>NANDA</b> sits at rung 1 (identity &amp; discovery — its <b>AgentFacts</b> is a superset of the A2A <b>Agent Card</b>); this work’s <b style="color:var(--ext)">correction surface</b> (contestation + exit) is a protocol-layer attempt at the empty rung 5. The complete answer there is an institution (EU AI Act, product-liability law), not a credential — these map to the four layers in the sidebar.</p>
+        <p style="margin-top:8px;font-size:12px">Steward names below are where each spec is maintained; verified against primary sources. Interop (A2A), tools (MCP) and payments (AP2) ride on rungs 1–4 rather than extending the authority ladder.</p>
       </div>
     </details>
 
@@ -204,7 +222,11 @@ const TERMS = {
   "correction surface":"The mechanisms added on top of the core so a party that was acted on can complain, and an agent can retire its own identity — the extension this work adds.",
   "threshold":"Requiring more than one independent issuer to agree before the facts are trusted.",
   "resolver":"The index’s signing key. The client pins it, so only address cards signed by this exact key are accepted.",
-  "AuthZEN":"An open standard for asking an authorisation server whether an action is permitted.",
+  "AuthZEN":"An OpenID standard API for asking a policy decision point whether an action is permitted.",
+  "A2A":"Agent2Agent — an open protocol (Linux Foundation) for agents to discover and talk to each other, via Agent Cards.",
+  "Agent Card":"A2A’s metadata document describing an agent’s capabilities; NANDA’s AgentFacts is a superset of it.",
+  "MCP":"Model Context Protocol — connects one agent to external tools and data (a tool channel, not agent-to-agent).",
+  "AP2":"Agent Payments Protocol — agent-driven payments, built as an extension of A2A.",
   "Txn-Tokens":"Short-lived, signed tokens that carry request context across the services in an operator’s stack.",
   "Transaction Tokens":"Short-lived, signed tokens that carry request context across the services in an operator’s stack.",
 };
@@ -261,7 +283,7 @@ function renderMap(){
     <text x="40" y="${h/2+4}" fill="#c9d4e3" font-size="13" font-family="ui-sans-serif,system-ui">${esc(name)}</text></g>`;
   const lbl=(x,y,t,c)=>`<text x="${x}" y="${y}" fill="${c||'#7c8aa0'}" font-size="11" font-family="ui-monospace,monospace" text-anchor="middle">${esc(t)}</text>`;
   document.getElementById("map").innerHTML=`
-  <svg class="map" viewBox="0 0 820 340" role="img" aria-label="How the actors fit together: the client resolves the index, fetches facts from an untrusted host, verifies credentials signed by the provider and auditor, then acts on the agent.">
+  <svg class="map" viewBox="0 0 820 368" role="img" aria-label="How the actors fit together: the client resolves the index, fetches facts from an untrusted host, verifies credentials signed by the provider and auditor, then acts on the agent.">
     <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c8aa0"/></marker>
       <marker id="ahb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#38bdf8"/></marker></defs>
     ${node(30,148,150,58,"You")}
@@ -283,10 +305,56 @@ function renderMap(){
     ${lbl(560,150,"sign the VCs")}
     <path d="M150,206 C150,250 230,280 330,295" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahb)"/>
     ${lbl(208,300,"④ act — only if every check passes","#38bdf8")}
-    <text x="105" y="232" fill="#7c8aa0" font-size="10.5" font-family="ui-monospace,monospace" text-anchor="middle">verifies every hop · fails closed</text>
-    <line x1="0" y1="324" x2="820" y2="324" stroke="#f5b342" stroke-width="1" stroke-dasharray="5 4"/>
-    <text x="820" y="338" fill="#f5b342" font-size="11" font-family="ui-monospace,monospace" text-anchor="end">correction surface — contest · exit (this work)</text>
+    <text x="122" y="232" fill="#7c8aa0" font-size="10.5" font-family="ui-monospace,monospace" text-anchor="middle">verifies every hop · fails closed</text>
+    <line x1="0" y1="342" x2="820" y2="342" stroke="#f5b342" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="410" y="359" fill="#f5b342" font-size="11" font-family="ui-monospace,monospace" text-anchor="middle">correction surface — contest · exit (this work)</text>
   </svg>`;
+}
+
+// ---- landscape: the agent-stack ladder (where NANDA sits) ----------------
+// Five rungs of questions. Standards answer 1-4 (the operator control surface);
+// rung 5 (redress to the governed party) is empty across the corpus, by charter.
+// Steward attributions verified against primary sources.
+const RUNGS=[
+  {n:5, q:"Who answers when a permitted action is wrong?", sub:"consequence · redress", empty:true,
+   chips:[{t:"— no standard —"},{t:"correction surface",s:"this work",tag:"thiswork"},{t:"EU AI Act · PLD",s:"regulator"}]},
+  {n:4, q:"May it continue?", sub:"continuity — governing the stay",
+   chips:[{t:"AuthZEN denial→escalate",s:"OpenID"},{t:"AAuth missions",s:"IETF"},{t:"Txn-Token re-eval",s:"IETF"},{t:"CAEP/SSF",s:"OpenID"}]},
+  {n:3, q:"Why?", sub:"intent binding",
+   chips:[{t:"Agentic JWT",s:"IETF"},{t:"AAuth Mission",s:"IETF"},{t:"Transaction Tokens",s:"IETF"}]},
+  {n:2, q:"On whose behalf?", sub:"delegation",
+   chips:[{t:"OAuth act/sub",s:"IETF"},{t:"Identity Chaining",s:"IETF"},{t:"AAuth Person Server",s:"IETF"}]},
+  {n:1, q:"Who is acting?", sub:"identity & discovery",
+   chips:[{t:"DID · VC",s:"W3C"},{t:"WIMSE · SPIFFE",s:"IETF·CNCF"},{t:"WebAuthn",s:"FIDO"},{t:"AgentFacts",s:"NANDA",tag:"nanda"}]},
+];
+function renderPlane(){
+  const W=900, x0=16, headFs=12, chipFs=10.5, H=362;
+  const tops=[12,80,130,180,230], div=70;       // rung 5 at top; divider below it
+  let s=`<svg class="map" viewBox="0 0 ${W} ${H}" role="img" aria-label="The agent stack as a ladder of five questions. Rungs 1 to 4 (who is acting, on whose behalf, why, may it continue) are covered by standards — the operator control surface. Rung 5 (who answers when a permitted action is wrong) is empty across the standards corpus — the governed party's correction surface, where this work sits. NANDA is at rung 1, identity and discovery.">
+    <title>Where NANDA sits: the agent-stack ladder</title>`;
+  RUNGS.forEach((r,i)=>{
+    const top=tops[i], accent=r.empty?"#f5b342":"#38bdf8", bg=r.empty?"rgba(245,179,66,.06)":"rgba(56,189,248,.03)";
+    s+=`<rect x="0" y="${top}" width="${W}" height="50" rx="8" fill="${bg}"/>`;
+    s+=`<rect x="0" y="${top}" width="3" height="50" fill="${accent}"/>`;
+    s+=`<text x="${x0}" y="${top+20}" fill="${r.empty?'#f5b342':'#c9d4e3'}" font-size="${headFs}" font-family="ui-sans-serif,system-ui" font-weight="600">rung ${r.n} · ${esc(r.q)}  (${esc(r.sub)})</text>`;
+    let cx=x0; const cy=top+40;
+    r.chips.forEach(c=>{
+      const col=c.tag==="nanda"?"#38bdf8":c.tag==="thiswork"?"#f5b342":"#c9d4e3";
+      const lab=esc(c.t), stw=c.s?` (${esc(c.s)})`:"";
+      s+=`<text x="${cx}" y="${cy}" fill="${col}" font-size="${chipFs}" font-family="ui-monospace,monospace">${lab}</text>`;
+      cx+=lab.length*chipFs*0.62;
+      if(stw){s+=`<text x="${cx}" y="${cy}" fill="#7c8aa0" font-size="${chipFs}" font-family="ui-monospace,monospace">${stw}</text>`;cx+=stw.length*chipFs*0.62;}
+      cx+=12;
+    });
+  });
+  s+=`<line x1="0" y1="${div}" x2="${W}" y2="${div}" stroke="#f5b342" stroke-width="1" stroke-dasharray="6 4" opacity=".85"/>`;
+  s+=`<text x="${W-6}" y="${div-4}" fill="#f5b342" font-size="10" font-family="ui-monospace,monospace" text-anchor="end">▲ surface two — correction (rung 5)</text>`;
+  s+=`<text x="${W-6}" y="${div+13}" fill="#7c8aa0" font-size="10" font-family="ui-monospace,monospace" text-anchor="end">▼ surface one — operator control (rungs 1–4, built)</text>`;
+  s+=`<text x="${x0}" y="300" fill="#9fb0c6" font-size="11" font-family="ui-monospace,monospace">▸ NANDA Index → rung 1 (identity &amp; discovery) · AgentFacts ⊇ A2A Agent Card</text>`;
+  s+=`<text x="${x0}" y="320" fill="#7c8aa0" font-size="9.5" font-family="ui-sans-serif,system-ui">Riding on rungs 1–4: A2A agent↔agent (LF) · MCP tool access (LF/AAIF) · AP2 payments (LF/Google) · security: OWASP, CoSAI (OASIS), NIST</text>`;
+  s+=`<text x="${x0}" y="342" fill="#7c8aa0" font-size="9.5" font-family="ui-sans-serif,system-ui">Stewards: W3C · IETF · OpenID · FIDO · CNCF/OpenSSF · Linux Foundation (AAIF) · OASIS (CoSAI) · OWASP · NIST · MIT (NANDA)</text>`;
+  s+=`</svg>`;
+  document.getElementById("plane").innerHTML=s;
 }
 
 // ---- swimlane sequence diagram -------------------------------------------
@@ -466,7 +534,7 @@ async function load(scn){
   DATA=data; renderSummary(DATA); renderIds(DATA); setCurrent(0,false);
 }
 async function init(){
-  renderGlossary(); renderCast(); renderMap();
+  renderGlossary(); renderCast(); renderMap(); renderPlane();
   document.getElementById("prev").onclick=()=>{stop();setCurrent(CUR-1,true);};
   document.getElementById("next").onclick=()=>{stop();setCurrent(CUR+1,true);};
   document.getElementById("play").onclick=play;
