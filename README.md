@@ -108,7 +108,7 @@ issuer/       build & issue provider + auditor VCs
 client/       the verifying resolver (prints & verifies every hop, fails closed)
 demo/         register / resolve / tamper / spoof / contest / run_all / run_local.sh
 schemas/      JSON Schemas for every artefact
-tests/        35 unit + integration tests
+tests/        50 unit + integration tests
 docs/         design note, A2A mapping
 ```
 
@@ -119,7 +119,7 @@ make test         # or: uv run pytest -q
 make lint         # ruff check + format --check
 ```
 
-35 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
+50 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
 detection, VC issue/verify (untrusted-issuer / tamper / expiry), the facts host,
 contestation standing, and the A2A projection.
 
