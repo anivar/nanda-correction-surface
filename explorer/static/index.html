@@ -46,6 +46,14 @@
   .intro .body{padding:2px 16px 16px;color:var(--dim);font-size:13px}
   .intro .body p{margin:0 0 9px} .intro .body b{color:var(--txt)}
   .map{width:100%;height:auto;display:block;margin:8px 0 4px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+  .sources{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:12px;line-height:1.75}
+  .sources .src-h{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:6px}
+  .sources .src-h span{text-transform:none;letter-spacing:0}
+  .sources .src-row{margin:3px 0;color:var(--dim)}
+  .sources .src-row b{display:inline-block;min-width:104px;color:var(--txt);font-weight:600;font-size:11px;vertical-align:top}
+  .sources .muted{color:var(--dim)}
+  .sources a{color:var(--paper);text-decoration:none;border-bottom:1px solid transparent}
+  .sources a:hover,.sources a:focus-visible{border-bottom-color:var(--paper);outline:none}
 
   .cast{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
   .actor{flex:1 1 150px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
@@ -167,7 +175,17 @@
         <p>Read the agent stack as a <b>ladder of questions</b>. The standards answer them bottom-to-top — and stop at the same rung every time.</p>
         <div id="plane"></div>
         <p style="margin-top:10px"><b>Rungs 1–4</b> (who is acting · on whose behalf · why · may it continue) are well covered — together they are the <b>operator’s control surface</b>. <b>Rung 5</b> (who answers when a permitted action is wrong) is <b style="color:var(--ext)">empty across the standards corpus, by charter</b> — the <b>governed party’s correction surface</b>. <b>NANDA</b> sits at rung 1 (identity &amp; discovery — its <b>AgentFacts</b> is a superset of the A2A <b>Agent Card</b>); this work’s <b style="color:var(--ext)">correction surface</b> (contestation + exit) is a protocol-layer attempt at the empty rung 5. The complete answer there is an institution (EU AI Act, product-liability law), not a credential — these map to the four layers in the sidebar.</p>
-        <p style="margin-top:8px;font-size:12px">Steward names below are where each spec is maintained; verified against primary sources. Interop (A2A), tools (MCP) and payments (AP2) ride on rungs 1–4 rather than extending the authority ladder.</p>
+        <p style="margin-top:8px;font-size:12px">Steward names are where each spec is maintained; every protocol below links to its primary source (verified). Interop (A2A), tools (MCP) and payments (AP2) ride on rungs 1–4 rather than extending the authority ladder.</p>
+        <div class="sources">
+          <div class="src-h">Standards &amp; sources <span>— every protocol links to its primary source</span></div>
+          <div class="src-row"><b>1 · identity</b> <a href="https://www.w3.org/TR/did-core/" target="_blank" rel="noopener">DID</a> · <a href="https://www.w3.org/TR/vc-data-model-2.0/" target="_blank" rel="noopener">Verifiable Credentials</a> · <a href="https://datatracker.ietf.org/wg/wimse/" target="_blank" rel="noopener">WIMSE</a> · <a href="https://spiffe.io/" target="_blank" rel="noopener">SPIFFE</a> · <a href="https://fidoalliance.org/passkeys/" target="_blank" rel="noopener">WebAuthn/passkeys</a> · <a href="https://arxiv.org/abs/2507.14263" target="_blank" rel="noopener">NANDA AgentFacts</a></div>
+          <div class="src-row"><b>2 · delegation</b> <a href="https://www.rfc-editor.org/rfc/rfc8693" target="_blank" rel="noopener">OAuth Token Exchange (RFC 8693)</a> · <a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-chaining/" target="_blank" rel="noopener">Identity Chaining</a> · <a href="https://datatracker.ietf.org/doc/draft-hardt-oauth-aauth-protocol/" target="_blank" rel="noopener">AAuth</a></div>
+          <div class="src-row"><b>3 · intent</b> <a href="https://datatracker.ietf.org/doc/draft-goswami-agentic-jwt/" target="_blank" rel="noopener">Agentic JWT</a> · <a href="https://datatracker.ietf.org/doc/draft-hardt-oauth-aauth-protocol/" target="_blank" rel="noopener">AAuth Mission</a> · <a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/" target="_blank" rel="noopener">Transaction Tokens</a></div>
+          <div class="src-row"><b>4 · continuity</b> <a href="https://openid.net/wg/authzen/" target="_blank" rel="noopener">AuthZEN</a> · <a href="https://openid.net/wg/authzen/" target="_blank" rel="noopener">AuthZEN Access-Request &amp; Approval Profile</a> · <a href="https://openid.net/wg/sse/" target="_blank" rel="noopener">CAEP / Shared Signals</a></div>
+          <div class="src-row"><b>5 · consequence</b> <a href="https://github.com/anivar/nanda-correction-surface" target="_blank" rel="noopener">correction surface (this work)</a> · <a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank" rel="noopener">EU AI Act</a> · <span class="muted">no standards-body spec</span></div>
+          <div class="src-row"><b>on top</b> <a href="https://a2a-protocol.org/" target="_blank" rel="noopener">A2A</a> · <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">MCP</a> · <a href="https://ap2-protocol.org/" target="_blank" rel="noopener">AP2</a> · <a href="https://genai.owasp.org/" target="_blank" rel="noopener">OWASP GenAI</a> · <a href="https://www.coalitionforsecureai.org/" target="_blank" rel="noopener">CoSAI</a> · <a href="https://www.nist.gov/" target="_blank" rel="noopener">NIST</a></div>
+          <div class="src-row"><b>bodies</b> <a href="https://www.w3.org" target="_blank" rel="noopener">W3C</a> · <a href="https://www.ietf.org" target="_blank" rel="noopener">IETF</a> · <a href="https://openid.net" target="_blank" rel="noopener">OpenID</a> · <a href="https://fidoalliance.org" target="_blank" rel="noopener">FIDO</a> · <a href="https://www.cncf.io" target="_blank" rel="noopener">CNCF</a> · <a href="https://openssf.org" target="_blank" rel="noopener">OpenSSF</a> · <a href="https://aaif.io" target="_blank" rel="noopener">Linux Foundation / AAIF</a> · <a href="https://www.oasis-open.org" target="_blank" rel="noopener">OASIS</a> · <a href="https://owasp.org" target="_blank" rel="noopener">OWASP</a> · <a href="https://projectnanda.org" target="_blank" rel="noopener">MIT / Project NANDA</a></div>
+        </div>
       </div>
     </details>
 
