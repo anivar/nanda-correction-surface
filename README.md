@@ -131,7 +131,8 @@ A2A projection.
 ## Protocol explorer & diagrams
 
 A self-contained visual walk-through of the resolution flow, with **real in-process
-crypto** (Ed25519/JCS, W3C VCs, severance) — no dependency on the other services:
+crypto** (Ed25519/JCS, W3C VCs, severance) — no dependency on the other services.
+**Live:** <https://anivar.github.io/nanda-correction-surface/>
 
 ```bash
 make explorer        # → http://localhost:8090   (or: docker compose up → :8090)
