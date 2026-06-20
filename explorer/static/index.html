@@ -18,7 +18,8 @@
   header h1{margin:0;font-size:18px;letter-spacing:.3px}
   header .tag{color:var(--dim);font-size:13px;margin-top:3px;max-width:80ch}
   .layout{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:calc(100vh - 70px)}
-  aside{border-right:1px solid var(--line);padding:16px;overflow:auto}
+  aside{border-right:1px solid var(--line);padding:16px;overflow:auto;position:sticky;top:0;align-self:start;max-height:calc(100vh - 70px)}
+  @media (max-width:760px){aside{position:static;max-height:none}}
   main{padding:18px 24px;overflow:auto}
   .group-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:18px 0 8px}
   .group-label:first-child{margin-top:0}
@@ -169,6 +170,29 @@
       </div>
     </details>
 
+    <div class="summary" id="summary"></div>
+    <div class="ids" id="ids"></div>
+
+    <div class="diagram"><div id="swim"></div></div>
+    <div class="key">
+      <span style="color:var(--paper)"><i></i> core protocol</span>
+      <span style="color:var(--ext)"><i></i> correction surface</span>
+      <span style="color:var(--ctx)"><i></i> operator context (not run)</span>
+      <span style="color:var(--fail)"><i></i> blocked · fail closed</span>
+    </div>
+    <div class="player">
+      <button id="prev" aria-label="Previous step">◀</button>
+      <button id="play" aria-label="Play" aria-pressed="false">▶ Play</button>
+      <button id="next" aria-label="Next step">▶</button>
+      <span class="count" id="count"></span>
+      <span class="hint">click a step · ← → keys · space to play</span>
+    </div>
+
+    <div class="timeline" id="timeline"></div>
+
+    <div class="group-label">The cast</div>
+    <div class="cast" id="cast"></div>
+
     <details class="intro" id="landscape" open>
       <summary><span class="chev">▶</span> Where does NANDA sit? (the agent-standards landscape)</summary>
       <div class="body">
@@ -189,28 +213,6 @@
       </div>
     </details>
 
-    <div class="group-label">The cast</div>
-    <div class="cast" id="cast"></div>
-
-    <div class="summary" id="summary"></div>
-    <div class="ids" id="ids"></div>
-
-    <div class="diagram"><div id="swim"></div></div>
-    <div class="key">
-      <span style="color:var(--paper)"><i></i> core protocol</span>
-      <span style="color:var(--ext)"><i></i> correction surface</span>
-      <span style="color:var(--ctx)"><i></i> operator context (not run)</span>
-      <span style="color:var(--fail)"><i></i> blocked · fail closed</span>
-    </div>
-    <div class="player">
-      <button id="prev" aria-label="Previous step">◀</button>
-      <button id="play" aria-label="Play" aria-pressed="false">▶ Play</button>
-      <button id="next" aria-label="Next step">▶</button>
-      <span class="count" id="count"></span>
-      <span class="hint">click a step · ← → keys · space to play</span>
-    </div>
-
-    <div class="timeline" id="timeline"></div>
   </main>
 </div>
 
@@ -542,7 +544,7 @@ function fail(){
     `<span class="badge fail">offline</span><span>Could not load scenario data — open via a static host (e.g. GitHub Pages) or run the explorer backend.</span>`;
 }
 
-async function load(scn){
+async function load(scn,scrollTo){
   const seq=++loadSeq;
   document.querySelectorAll("button.scn").forEach(b=>b.classList.toggle("active",b.dataset.k===scn));
   stop();
@@ -550,6 +552,10 @@ async function load(scn){
   try{ data=await fetchWalk(scn); }catch(e){ return; }
   if(seq!==loadSeq) return;            // a newer scenario load started — drop this stale one
   DATA=data; renderSummary(DATA); renderIds(DATA); setCurrent(0,false);
+  if(scrollTo){                        // bring the freshly-loaded scenario into view on click
+    const el=document.getElementById("summary");
+    if(el) el.scrollIntoView({block:"start",behavior:REDUCED?"auto":"smooth"});
+  }
 }
 async function init(){
   renderGlossary(); renderCast(); renderMap(); renderPlane();
@@ -568,8 +574,8 @@ async function init(){
   const box=document.getElementById("scenarios");
   box.innerHTML=scenarios.map(s=>
     `<button class="scn" data-k="${esc(s.key)}"><span class="k">${esc(s.key)}</span><span class="d">${esc(s.title)}</span></button>`).join("");
-  box.querySelectorAll("button.scn").forEach(b=>b.onclick=()=>load(b.dataset.k));
-  load("resolve");
+  box.querySelectorAll("button.scn").forEach(b=>b.onclick=()=>load(b.dataset.k,true));
+  load("resolve");  // initial load — no auto-scroll
 }
 init();
 </script>
