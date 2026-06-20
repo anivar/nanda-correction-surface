@@ -17,6 +17,15 @@
   header{padding:16px 26px;border-bottom:1px solid var(--line)}
   header h1{margin:0;font-size:18px;letter-spacing:.3px}
   header .tag{color:var(--dim);font-size:13px;margin-top:3px;max-width:80ch}
+  .parts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .parts .part{font-size:12px;padding:4px 11px;border-radius:8px;border:1px solid var(--line);border-left-width:3px}
+  .parts .part b{color:var(--txt)} .parts .part .lab{color:var(--dim)}
+  .parts .part.core{border-left-color:var(--paper)} .parts .part.ext{border-left-color:var(--ext)}
+  .scn-grp{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:12px 0 6px;padding-left:8px;border-left:2px solid var(--line)}
+  .scn-grp:first-child{margin-top:0}
+  .scn-grp.core{border-left-color:var(--paper)} .scn-grp.ext{border-left-color:var(--ext)}
+  footer{border-top:1px solid var(--line);padding:14px 26px;color:var(--dim);font-size:12px}
+  footer b{color:var(--txt)} footer a{color:var(--paper)}
   .layout{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:calc(100vh - 70px)}
   aside{border-right:1px solid var(--line);padding:16px;overflow:auto;position:sticky;top:0;align-self:start;max-height:calc(100vh - 70px)}
   @media (max-width:760px){aside{position:static;max-height:none}}
@@ -132,7 +141,11 @@
 <body>
 <header>
   <h1>NANDA Protocol Explorer</h1>
-  <div class="tag">See how a client finds an AI agent <b>by name</b> and verifies every step — and what happens when a record is tampered with, a credential is forged, the agent exits, or someone files a complaint. The cryptography is real (precomputed, not mocked).</div>
+  <div class="tag">Find an AI agent <b>by name</b> and verify every hop — the <b style="color:var(--paper)">NANDA Index</b> resolution flow (arXiv:2507.14263) — <b style="color:var(--ext)">plus a correction-surface extension</b> (contestation + exit) added in this work. The cryptography is real (precomputed, not mocked).</div>
+  <div class="parts">
+    <span class="part core"><b>NANDA paper</b> <span class="lab">— the core protocol: resolve · verify · fail closed</span></span>
+    <span class="part ext"><b>This work</b> <span class="lab">— the correction surface: contestation + self-sovereign exit</span></span>
+  </div>
 </header>
 <div class="layout">
   <aside>
@@ -175,8 +188,8 @@
 
     <div class="diagram"><div id="swim"></div></div>
     <div class="key">
-      <span style="color:var(--paper)"><i></i> core protocol</span>
-      <span style="color:var(--ext)"><i></i> correction surface</span>
+      <span style="color:var(--paper)"><i></i> NANDA paper (core)</span>
+      <span style="color:var(--ext)"><i></i> this work (correction surface)</span>
       <span style="color:var(--ctx)"><i></i> operator context (not run)</span>
       <span style="color:var(--fail)"><i></i> blocked · fail closed</span>
     </div>
@@ -215,6 +228,13 @@
 
   </main>
 </div>
+
+<footer>
+  A correction-surface extension to the <b>NANDA Index</b>, by <b>Anivar Aravind</b>.
+  <a href="https://github.com/anivar/nanda-correction-surface" target="_blank" rel="noopener">Source</a> ·
+  <a href="https://arxiv.org/abs/2507.14263" target="_blank" rel="noopener">NANDA paper</a> ·
+  <a href="https://doi.org/10.2139/ssrn.6059075" target="_blank" rel="noopener">Corrigibility paper</a>
+</footer>
 
 <script>
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -572,8 +592,12 @@ async function init(){
   let scenarios;
   try{({scenarios}=await fetchScenarios());}catch(e){return;}
   const box=document.getElementById("scenarios");
-  box.innerHTML=scenarios.map(s=>
-    `<button class="scn" data-k="${esc(s.key)}"><span class="k">${esc(s.key)}</span><span class="d">${esc(s.title)}</span></button>`).join("");
+  const PART={resolve:"core",privacy:"core",tamper:"core",spoof:"core",contest:"ext",exit:"ext"};
+  const btn=s=>`<button class="scn" data-k="${esc(s.key)}"><span class="k">${esc(s.key)}</span><span class="d">${esc(s.title)}</span></button>`;
+  const grp=(cls,title,arr)=>arr.length?`<div class="scn-grp ${cls}">${esc(title)}</div>`+arr.map(btn).join(""):"";
+  const core=scenarios.filter(s=>(PART[s.key]||"core")==="core");
+  const ext=scenarios.filter(s=>PART[s.key]==="ext");
+  box.innerHTML=grp("core","NANDA paper",core)+grp("ext","This work — correction surface",ext);
   box.querySelectorAll("button.scn").forEach(b=>b.onclick=()=>load(b.dataset.k,true));
   load("resolve");  // initial load — no auto-scroll
 }
