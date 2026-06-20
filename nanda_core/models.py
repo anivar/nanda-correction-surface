@@ -35,8 +35,12 @@ class AgentAddr(BaseModel):
     agent_id: str  # globally unique machine id, e.g. nanda:<uuid>
     agent_name: str  # human URN, e.g. urn:agent:acme:translator
     agent_did: str | None = None  # the agent's did:key — binds the signed pointer to the VC subject
+    # Quilt registration type (paper Table 1): native | enterprise | did.
+    registration_type: str = "native"
     primary_facts_url: str  # AgentFacts on the provider's own domain
     private_facts_url: str | None = None  # AgentFacts on a neutral host (privacy path)
+    # Enterprise-routed entries point at a registry that yields the facts URL.
+    enterprise_registry_url: str | None = None
     adaptive_resolver_url: str | None = None  # optional dynamic routing (Tier 3)
     ttl: int = 3600  # cache duration, seconds
     issued_at: str | None = None  # ISO-8601 UTC; set at sign time so ttl is enforceable
@@ -131,6 +135,10 @@ class FactsBundle(BaseModel):
     provider_vc: str
     auditor_vc: str | None = None
     contestations: list[dict] = Field(default_factory=list)
+    # A self-sovereign severance (if the agent has exited this identity). Signed by
+    # the agent's own key; renders the prior authority inexecutable on the subject's
+    # say-so, optionally naming a successor identity.
+    severance: dict | None = None
 
 
 # --- Level 2 extension: the contestation (affected-party counter-claim) --------
@@ -163,3 +171,17 @@ class Contestation(BaseModel):
     category: str = "service-dispute"
     created: str
     receipt: dict  # an InteractionReceipt, agent-signed (sign_record form)
+
+
+class Severance(BaseModel):
+    """A self-sovereign exit: the agent, with its own key, retires this identity so
+    that prior delegated authority becomes inexecutable — without asking any issuer
+    or registry (a did:key has no upstream endpoint to petition). Optionally names a
+    successor identity so the agent can re-participate on fair terms."""
+
+    type: str = "Severance"
+    agent_id: str
+    agent_did: str  # the identity being retired (must match the signer)
+    successor_did: str | None = None  # the new self-sovereign identity, if any
+    reason: str = ""
+    created: str

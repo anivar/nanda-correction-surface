@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 import httpx
 
-from nanda_core import contest, crypto, vc
+from nanda_core import contest, crypto, severance, vc
 from nanda_core.didkey import decode_did_key
 from nanda_core.trust import TrustPolicy
 
@@ -50,12 +50,20 @@ class ResolveResult:
 
 class NandaClient:
     def __init__(
-        self, policy: TrustPolicy, index_url: str, *, verbose: bool = True, timeout: float = 10.0
+        self,
+        policy: TrustPolicy,
+        index_url: str,
+        *,
+        revocation_url: str | None = None,
+        verbose: bool = True,
+        timeout: float = 10.0,
     ):
         self.policy = policy
         self.index_url = index_url.rstrip("/")
+        self.revocation_url = revocation_url  # live VC-Status-List stub, refreshed per resolve
         self.verbose = verbose
         self._http = httpx.Client(timeout=timeout)
+        self._revoked_live: set[str] = set()
 
     def close(self) -> None:
         self._http.close()
@@ -74,6 +82,7 @@ class NandaClient:
     # --- the resolution walk --------------------------------------------------
     def resolve(self, agent_name: str, *, path: str = "primary", act: bool = True) -> ResolveResult:
         self._say(C.rule(f"Resolve  {agent_name}   ({path} path)"))
+        self._refresh_revocations()
 
         # Hop 1 — index lookup -> signed AgentAddr
         self._say(C.hop(1, "Index lookup → AgentAddr"))
@@ -81,19 +90,24 @@ class NandaClient:
             f"{self.index_url}/resolve", params={"name": agent_name}, what="AgentAddr"
         )
         self._say(C.info(f"agent_id           {signed_addr.get('agent_id')}"))
+        self._say(C.info(f"registration_type  {signed_addr.get('registration_type', 'native')}"))
         self._say(C.info(f"primary_facts_url  {signed_addr.get('primary_facts_url')}"))
         self._say(C.info(f"private_facts_url  {signed_addr.get('private_facts_url')}"))
         self._say(C.info(f"ttl                {signed_addr.get('ttl')}s"))
         self.verify_agentaddr(signed_addr)
 
-        # Hop 2 — choose the facts URL for the requested path
+        # Hop 2 — choose the facts URL (following the enterprise registry, if routed)
         self._say(C.hop(2, "Select AgentFacts source"))
-        facts_url, host_role = self._select_facts_url(signed_addr, path)
+        facts_url, host_role = self._resolve_facts_url(signed_addr, path)
 
         # Hop 3 — fetch AgentFacts bundle from the (untrusted) host
         self._say(C.hop(3, f"Fetch AgentFacts  [{host_role} host]"))
         self._say(C.info(f"GET {facts_url}"))
         bundle = self._get_json(facts_url, what="AgentFacts bundle")
+
+        # Exit gate — refuse immediately if the subject has SEVERED this identity.
+        # Checked against the index-bound (signed) agent_did, before trusting facts.
+        self._check_severance(bundle, signed_addr.get("agent_did"))
 
         # Hop 4 — verify the provider credential (required)
         self._say(C.hop(4, "Verify provider credential (W3C VC)"))
@@ -204,6 +218,49 @@ class NandaClient:
         if age > ttl:
             self._say(C.warn(f"AgentAddr stale (age {age}s > ttl {ttl}s) — re-resolve"))
 
+    def _refresh_revocations(self) -> None:
+        """Pull the current revocation set (stubbed VC-Status-List). Revocation is
+        dynamic state, so unlike the trust anchors it IS fetched at resolve time."""
+        if not self.revocation_url:
+            return
+        try:
+            data = self._get_json(self.revocation_url, what="revocation list")
+            self._revoked_live = set(data.get("revoked", []))
+        except VerificationFailure:
+            self._revoked_live = set()  # status unavailable -> rely on the static policy
+
+    def _resolve_facts_url(self, signed: dict, path: str) -> tuple[str, str]:
+        # Enterprise-routed entries take one extra hop through a registry.
+        if signed.get("registration_type") == "enterprise" and signed.get(
+            "enterprise_registry_url"
+        ):
+            reg_url = signed["enterprise_registry_url"]
+            self._say(C.ok(f"enterprise-routed: via registry {reg_url}"))
+            reg = self._get_json(reg_url, what="enterprise registry")
+            url = reg.get("facts_url")
+            if not url:
+                raise VerificationFailure("enterprise registry returned no facts_url")
+            self._say(C.info(f"registry → {url}"))
+            return url, "enterprise"
+        return self._select_facts_url(signed, path)
+
+    def _check_severance(self, bundle: dict, agent_did: str | None) -> None:
+        """Exit gate: if the subject has severed this identity (signed by its own
+        key), prior authority is inexecutable — refuse, surfacing any successor."""
+        sev = bundle.get("severance")
+        if not sev or not agent_did:
+            return
+        if severance.verify_severance(sev, expected_agent_did=agent_did):
+            successor = sev.get("successor_did")
+            self._say(C.fail("identity SEVERED by its own key — prior authority inexecutable"))
+            if successor:
+                self._say(C.info(f"successor identity: {successor}"))
+            raise VerificationFailure(
+                "agent has severed this identity"
+                + (f" (successor: {successor})" if successor else "")
+            )
+        self._say(C.warn("ignoring an invalid severance (not signed by this identity)"))
+
     def _select_facts_url(self, signed: dict, path: str) -> tuple[str, str]:
         if path == "private":
             url = signed.get("private_facts_url")
@@ -231,8 +288,14 @@ class NandaClient:
         except vc.VCError as exc:
             self._say(C.fail(f"{label} credential REJECTED: {exc}"))
             raise VerificationFailure(f"{label} credential invalid: {exc}") from exc
-        if self.policy.is_revoked(cred):
-            self._say(C.fail(f"{label} credential REVOKED ({cred.get('id')})"))
+        cred_id = cred.get("id")
+        status_id = (cred.get("credentialStatus") or {}).get("id")
+        if (
+            self.policy.is_revoked(cred)
+            or cred_id in self._revoked_live
+            or status_id in self._revoked_live
+        ):
+            self._say(C.fail(f"{label} credential REVOKED ({cred_id})"))
             raise VerificationFailure(f"{label} credential revoked")
         self._say(C.ok(f"{label} VC verified — issuer {cred['issuer']} (host-independent)"))
         return cred

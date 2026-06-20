@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 
 from nanda_core.models import FactsBundle
 
@@ -54,12 +54,17 @@ def put_facts(agent_id: str, bundle: FactsBundle):
     contestations are preserved (and merged with any in the new bundle)."""
     if bundle.agent_id != agent_id:
         raise HTTPException(status_code=422, detail="body agent_id must match the URL path")
-    existing = _store.get(agent_id, {}).get("contestations", [])
+    prior = _store.get(agent_id, {})
+    existing = prior.get("contestations", [])
     stored = bundle.model_dump()
     seen = {c.get("contestation_id") for c in stored.get("contestations", [])}
     for c in existing:
         if c.get("contestation_id") not in seen:
             stored.setdefault("contestations", []).append(c)
+    # A severance, once filed, is permanent: re-hosting cannot un-sever an identity
+    # (the host can't forge the agent's key anyway). Preserve any prior severance.
+    if prior.get("severance") and not stored.get("severance"):
+        stored["severance"] = prior["severance"]
     _store[agent_id] = stored
     return {"ok": True, "agent_id": agent_id, "role": HOST_ROLE}
 
@@ -96,3 +101,23 @@ def add_contestation(agent_id: str, contestation: dict):
         }
     contestations.append(contestation)
     return {"ok": True, "agent_id": agent_id, "contestations": len(contestations)}
+
+
+@app.post("/facts/{agent_id}/severance")
+def set_severance(agent_id: str, severance: dict):
+    """Record a self-sovereign severance (the agent has exited this identity).
+    Stored verbatim; the client verifies it was signed by the retiring identity."""
+    bundle = _store.get(agent_id)
+    if bundle is None:
+        raise HTTPException(status_code=404, detail=f"no AgentFacts hosted for {agent_id!r}")
+    bundle["severance"] = severance
+    return {"ok": True, "agent_id": agent_id, "severed": True}
+
+
+@app.get("/registry/{agent_id}")
+def enterprise_registry(agent_id: str, request: Request):
+    """Enterprise-routed indirection (paper Table 1): the index points here, and the
+    registry hands back where the facts actually live. One extra hop versus a
+    NANDA-native entry that points straight at the facts."""
+    base = str(request.base_url).rstrip("/")
+    return {"agent_id": agent_id, "facts_url": f"{base}/facts/{agent_id}", "registry": HOST_LABEL}

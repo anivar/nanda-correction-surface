@@ -21,6 +21,11 @@
       "default": null,
       "title": "Agent Did"
     },
+    "registration_type": {
+      "default": "native",
+      "title": "Registration Type",
+      "type": "string"
+    },
     "primary_facts_url": {
       "title": "Primary Facts Url",
       "type": "string"
@@ -36,6 +41,18 @@
       ],
       "default": null,
       "title": "Private Facts Url"
+    },
+    "enterprise_registry_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Enterprise Registry Url"
     },
     "adaptive_resolver_url": {
       "anyOf": [

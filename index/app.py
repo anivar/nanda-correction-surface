@@ -36,14 +36,26 @@ _by_name: dict[str, dict] = {}
 _by_id: dict[str, dict] = {}
 
 
+# Stubbed VC-Status-List: a set of revoked credential ids. Production would be an
+# issuer-hosted W3C Bitstring Status List; here the index serves a simple set the
+# client refreshes at resolve time.
+_revoked: set[str] = set()
+
+
 class RegisterRequest(BaseModel):
     agent_name: str
     primary_facts_url: str
     agent_id: str | None = None
     agent_did: str | None = None
+    registration_type: str = "native"  # native | enterprise | did (quilt entry type)
+    enterprise_registry_url: str | None = None
     private_facts_url: str | None = None
     adaptive_resolver_url: str | None = None
     ttl: int = 3600
+
+
+class RevokeRequest(BaseModel):
+    credential_id: str
 
 
 @app.get("/healthz")
@@ -84,7 +96,9 @@ def register(req: RegisterRequest):
         agent_id=agent_id,
         agent_name=req.agent_name,
         agent_did=req.agent_did,
+        registration_type=req.registration_type,
         primary_facts_url=req.primary_facts_url,
+        enterprise_registry_url=req.enterprise_registry_url,
         private_facts_url=req.private_facts_url,
         adaptive_resolver_url=req.adaptive_resolver_url,
         ttl=req.ttl,
@@ -110,7 +124,26 @@ def list_agents():
     return {
         "count": len(_by_name),
         "agents": [
-            {"agent_name": n, "agent_id": a["agent_id"], "ttl": a["ttl"]}
+            {
+                "agent_name": n,
+                "agent_id": a["agent_id"],
+                "registration_type": a.get("registration_type", "native"),
+                "ttl": a["ttl"],
+            }
             for n, a in _by_name.items()
         ],
     }
+
+
+@app.post("/revoke")
+def revoke(req: RevokeRequest):
+    """Mark a credential id revoked (stubbed VC-Status-List). Issuer-authorised in
+    production; open here for the demo."""
+    _revoked.add(req.credential_id)
+    return {"ok": True, "revoked_count": len(_revoked)}
+
+
+@app.get("/revocations")
+def revocations():
+    """The current revocation set, refreshed by clients at resolve time."""
+    return {"revoked": sorted(_revoked)}
