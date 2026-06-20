@@ -109,3 +109,63 @@ def test_unbounded_credential_rejected():
     token = _raw_vc(issuer, typ=vc.JWT_VC_TYP, with_until=False)
     with pytest.raises(vc.VCError, match="validUntil"):
         vc.verify_credential(token, trusted_issuers={issuer.did})
+
+
+def test_missing_kid_rejected():
+    issuer = Identity.generate("provider")
+    payload = {
+        "@context": [vc.VC_CONTEXT_V2],
+        "type": ["VerifiableCredential"],
+        "issuer": issuer.did,
+        "validFrom": "2020-01-01T00:00:00Z",
+        "validUntil": "2999-01-01T00:00:00Z",
+        "credentialSubject": {"id": issuer.did},
+    }
+    token = pyjwt.encode(
+        payload, issuer.private_key, algorithm="EdDSA", headers={"typ": vc.JWT_VC_TYP}
+    )
+    with pytest.raises(vc.VCError, match="no kid"):
+        vc.verify_credential(token, trusted_issuers={issuer.did})
+
+
+def test_issuer_kid_mismatch_rejected():
+    # Signed by A (kid=A), but payload claims issuer=B -> rejected even though the
+    # signature is valid for A's key and A is trusted.
+    a = Identity.generate("issuer-a")
+    b = Identity.generate("issuer-b")
+    payload = {
+        "@context": [vc.VC_CONTEXT_V2],
+        "type": ["VerifiableCredential"],
+        "issuer": b.did,
+        "validFrom": "2020-01-01T00:00:00Z",
+        "validUntil": "2999-01-01T00:00:00Z",
+        "credentialSubject": {"id": b.did},
+    }
+    token = pyjwt.encode(
+        payload,
+        a.private_key,
+        algorithm="EdDSA",
+        headers={"typ": vc.JWT_VC_TYP, "kid": a.verification_method},
+    )
+    with pytest.raises(vc.VCError, match="does not match"):
+        vc.verify_credential(token, trusted_issuers={a.did, b.did})
+
+
+def test_unparseable_validity_date_raises_vcerror():
+    issuer = Identity.generate("provider")
+    payload = {
+        "@context": [vc.VC_CONTEXT_V2],
+        "type": ["VerifiableCredential"],
+        "issuer": issuer.did,
+        "validFrom": "2020-01-01T00:00:00Z",
+        "validUntil": "not-a-date",
+        "credentialSubject": {"id": issuer.did},
+    }
+    token = pyjwt.encode(
+        payload,
+        issuer.private_key,
+        algorithm="EdDSA",
+        headers={"typ": vc.JWT_VC_TYP, "kid": issuer.verification_method},
+    )
+    with pytest.raises(vc.VCError, match="unparseable validity date"):
+        vc.verify_credential(token, trusted_issuers={issuer.did})

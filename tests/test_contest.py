@@ -94,6 +94,19 @@ def test_forged_receipt_not_signed_by_agent():
     assert v.valid is False and "receipt" in v.reason
 
 
+def test_interaction_id_mismatch_rejected():
+    agent = Identity.generate("agent")
+    party = Identity.generate("party")
+    receipt, _iid = contest.mint_interaction_receipt(agent, "nanda:1", party.did, "job")
+    # Contestation references a different interaction than the receipt attests.
+    c = contest.file_contestation(
+        party, agent_id="nanda:1", agent_did=agent.did, interaction_id="int:wrong",
+        statement="dispute", receipt=receipt,
+    )
+    v = contest.verify_contestation(c, expected_agent_did=agent.did)
+    assert v.valid is False and "interaction_id" in v.reason
+
+
 def test_contestation_grafted_onto_other_registry_entry_is_rejected():
     # A contestation valid for nanda:1 must not be accepted when resolving nanda:2,
     # even though both share the same agent did.
