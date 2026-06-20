@@ -17,7 +17,7 @@ AgentFacts `credentialSubject` down to a standard
 | `version`                   | `version`                                           |
 | `provider.organization/url` | `provider.name` / `provider.url`                   |
 | `capabilities.streaming`    | `capabilities.streaming`                           |
-| `defaultInputModes`/`OutputModes` | `capabilities.modalities`                    |
+| `defaultInputModes`/`defaultOutputModes` | `capabilities.modalities`               |
 | `skills[]`                  | `skills[]` (id, name [= id], description, input/output modes) |
 | `securitySchemes`/`security`| `capabilities.authentication.methods` / `requiredScopes` |
 

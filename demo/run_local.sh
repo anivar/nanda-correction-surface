@@ -17,7 +17,7 @@ command -v uv >/dev/null 2>&1 || {
 }
 
 echo "syncing environment with uv (Python $(cat .python-version)) ..."
-uv sync --quiet
+uv sync --frozen --quiet
 
 # --- start services -----------------------------------------------------------
 PIDS=()

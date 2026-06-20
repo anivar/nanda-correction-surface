@@ -12,7 +12,7 @@ help:
 	@echo "make clean        - remove venv, caches and runtime state"
 
 sync:
-	uv sync
+	uv sync --frozen
 
 test:
 	uv run pytest -q

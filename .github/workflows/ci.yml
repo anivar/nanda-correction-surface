@@ -16,8 +16,9 @@ jobs:
           version: "0.11.6"
 
       # uv reads .python-version and provisions CPython 3.14.
+      # --frozen fails the build if uv.lock is stale, so CI tests exactly what ships.
       - name: Sync environment
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Lint (ruff)
         run: |
