@@ -1,21 +1,22 @@
 {
   "scenario": "spoof",
   "title": "Spoof \u2014 a forged credential is rejected",
-  "summary": "Provider credential failed verification \u2014 fail closed (issuer not in trust policy: did:key:z6MkguCQMZ\u2026)",
+  "summary": "Provider credential failed verification \u2014 fail closed (issuer not in trust policy: did:key:z6Mkf17umV\u2026)",
   "refused": true,
   "steps": [
     {
       "n": 1,
-      "from": "Client",
+      "from": "You",
       "to": "Index",
       "title": "Resolve AgentName \u2192 AgentAddr",
       "detail": "urn:agent:acme:translator",
+      "plain": "Look the agent up by its name and get back a small, signed \u201caddress card\u201d saying where to find it.",
       "status": "info",
       "layer": "paper",
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6MkmEf2BY\u2026",
+        "agent_did": "did:key:z6Mkux7yAx\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -23,10 +24,11 @@
     },
     {
       "n": 2,
-      "from": "Client",
-      "to": "Client",
+      "from": "You",
+      "to": "You",
       "title": "Verify AgentAddr \u2014 Ed25519 over JCS, resolver pinned",
       "detail": "signature valid; signed by the pinned index resolver",
+      "plain": "Check the card was signed by the one directory key you already trust. A valid signature from the wrong key is still refused.",
       "status": "ok",
       "layer": "paper",
       "tier": "Tier 1",
@@ -35,10 +37,11 @@
     },
     {
       "n": 3,
-      "from": "Client",
-      "to": "Client",
+      "from": "You",
+      "to": "You",
       "title": "Select AgentFacts source",
       "detail": "primary path \u2192 provider domain",
+      "plain": "Decide where to read the agent's details from \u2014 here, the provider's own site.",
       "status": "ok",
       "layer": "paper",
       "tier": "Tier 2",
@@ -47,10 +50,11 @@
     },
     {
       "n": 4,
-      "from": "Client",
-      "to": "Provider Host",
+      "from": "You",
+      "to": "Facts host",
       "title": "Fetch AgentFacts bundle",
       "detail": "GET from the provider host (untrusted; it signs nothing)",
+      "plain": "Download the agent's profile. This host only stores files \u2014 it cannot vouch for anything, so trust will come from the signed credentials inside.",
       "status": "ok",
       "layer": "paper",
       "tier": "Tier 2",
@@ -59,10 +63,11 @@
     },
     {
       "n": 5,
-      "from": "Client",
-      "to": "Client",
+      "from": "You",
+      "to": "You",
       "title": "Verify provider credential \u2014 W3C VC (JWT)",
-      "detail": "REJECTED: issuer not in trust policy: did:key:z6MkguCQMZ\u2026",
+      "detail": "REJECTED: issuer not in trust policy: did:key:z6Mkf17umV\u2026",
+      "plain": "The claim is signed by someone the client doesn't trust (or was tampered with), so it is rejected.",
       "status": "fail",
       "layer": "paper",
       "tier": "Tier 2 \u00b7 AgentFacts",
@@ -71,9 +76,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6MkfxfsTN\u2026",
-    "provider_issuer": "did:key:z6Mkg8t7x5\u2026",
-    "auditor_issuer": "did:key:z6MkmF5quS\u2026",
-    "agent": "did:key:z6MkmEf2BY\u2026"
+    "resolver": "did:key:z6MkgNt7tT\u2026",
+    "provider_issuer": "did:key:z6Mkt47p5G\u2026",
+    "auditor_issuer": "did:key:z6MkugFWy8\u2026",
+    "agent": "did:key:z6Mkux7yAx\u2026"
   }
 }

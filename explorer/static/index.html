@@ -7,185 +7,478 @@
 <style>
   :root{
     --bg:#0b0e14; --panel:#121722; --panel2:#0f141d; --line:#232a36; --txt:#c9d4e3; --dim:#7c8aa0;
-    --paper:#38bdf8; --ext:#f5b342; --ctx:#7c8aa0; --inst:#475569;
+    --paper:#38bdf8; --ext:#f5b342; --ctx:#7c8aa0; --inst:#6b7fa0;
     --ok:#34d399; --fail:#f87171; --warn:#fbbf24; --info:#7c8aa0;
     --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   a{color:var(--paper)}
-  header{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  header{padding:16px 26px;border-bottom:1px solid var(--line)}
   header h1{margin:0;font-size:18px;letter-spacing:.3px}
-  header .sub{color:var(--dim);font-size:13px}
-  .layout{display:grid;grid-template-columns:320px 1fr;gap:0;min-height:calc(100vh - 61px)}
-  aside{border-right:1px solid var(--line);padding:18px;overflow:auto}
-  main{padding:22px 26px;overflow:auto}
+  header .tag{color:var(--dim);font-size:13px;margin-top:3px;max-width:80ch}
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:calc(100vh - 70px)}
+  aside{border-right:1px solid var(--line);padding:16px;overflow:auto}
+  main{padding:18px 24px;overflow:auto}
   .group-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:18px 0 8px}
   .group-label:first-child{margin-top:0}
   button.scn{display:block;width:100%;text-align:left;background:var(--panel);color:var(--txt);border:1px solid var(--line);
-    border-radius:9px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font:inherit}
+    border-radius:9px;padding:9px 11px;margin-bottom:7px;cursor:pointer;font:inherit}
   button.scn:hover{border-color:#33405a}
   button.scn.active{border-color:var(--paper);box-shadow:inset 0 0 0 1px var(--paper)}
+  button.scn:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
   button.scn .k{font-family:var(--mono);font-size:12px;color:var(--paper)}
-  button.scn.active .k{color:var(--paper)}
   button.scn .d{display:block;color:var(--dim);font-size:12px;margin-top:2px}
-  .panel{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:12px}
-  .panel h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim)}
+  .panel{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:11px}
   .lay{display:flex;gap:8px;align-items:flex-start;margin:7px 0;font-size:12.5px}
   .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:0 0 auto}
   .lay .nm{font-family:var(--mono);font-size:11.5px}
   .lay .ds{color:var(--dim);font-size:11.5px}
-  .summary{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:12px 14px;border-radius:10px;
-    border:1px solid var(--line);background:var(--panel)}
+  .gl{margin:6px 0;font-size:12.5px}
+  .gl b{color:var(--txt);font-weight:600} .gl span{color:var(--dim)}
+
+  details.intro{background:var(--panel2);border:1px solid var(--line);border-radius:11px;margin-bottom:16px;overflow:hidden}
+  details.intro>summary{cursor:pointer;list-style:none;padding:12px 15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:9px}
+  details.intro>summary::-webkit-details-marker{display:none}
+  details.intro>summary:focus-visible{outline:2px solid var(--paper);outline-offset:-2px}
+  details.intro>summary .chev{color:var(--dim);transition:transform .15s;font-family:var(--mono)}
+  details.intro[open]>summary .chev{transform:rotate(90deg)}
+  .intro .body{padding:2px 16px 16px;color:var(--dim);font-size:13px}
+  .intro .body p{margin:0 0 9px} .intro .body b{color:var(--txt)}
+  .map{width:100%;height:auto;display:block;margin:8px 0 4px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+
+  .cast{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .actor{flex:1 1 150px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .actor .top{display:flex;align-items:center;gap:8px}
+  .actor .ic{width:22px;height:22px;flex:0 0 auto;color:var(--paper)}
+  .actor .nm{font-weight:600;font-size:13px}
+  .actor .role{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);
+    border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:auto}
+  .actor .role.verifier{color:var(--paper)} .actor .role.untrusted{color:var(--fail)}
+  .actor .role.trusted{color:var(--ok)} .actor .role.target{color:var(--ext)} .actor .role.claimant{color:var(--ext)}
+  .actor .ds{color:var(--dim);font-size:12px;margin-top:5px}
+
+  .summary{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
   .summary .badge{font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid}
-  .badge.ok{color:var(--ok);border-color:#1f6b50}
-  .badge.fail{color:var(--fail);border-color:#7a3030}
-  .ids{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:20px;color:var(--dim);font-size:12px}
-  .ids b{color:var(--txt);font-weight:600}
-  .ids code{font-family:var(--mono);color:var(--paper)}
-  .timeline{position:relative;margin-left:10px;border-left:2px solid var(--line);padding-left:24px}
-  .step{position:relative;margin:0 0 16px}
-  .step::before{content:"";position:absolute;left:-31px;top:6px;width:12px;height:12px;border-radius:50%;
-    background:var(--bg);border:2px solid var(--ctx)}
+  .badge.ok{color:var(--ok);border-color:#1f6b50} .badge.fail{color:var(--fail);border-color:#7a3030}
+  .ids{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:16px;color:var(--dim);font-size:12px}
+  .ids b{color:var(--txt);font-weight:600} .ids code{font-family:var(--mono);color:var(--paper)}
+
+  .diagram{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:6px 8px 2px}
+  .diagram svg{width:100%;height:auto;display:block}
+  .swim .hit{fill:transparent;cursor:pointer}
+  .swim .hit:hover{fill:rgba(56,189,248,.06)}
+  .key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 2px 0;color:var(--dim);font-size:11.5px}
+  .key span{display:inline-flex;align-items:center;gap:6px}
+  .key i{width:16px;height:0;border-top:2px solid currentColor;display:inline-block}
+  .player{display:flex;align-items:center;gap:8px;margin:10px 0 18px;flex-wrap:wrap}
+  .player button{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font:inherit;font-family:var(--mono);font-size:13px}
+  .player button:hover{border-color:#33405a}
+  .player button:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+  .player .count{color:var(--dim);font-size:12px;font-family:var(--mono)}
+  .player .hint{margin-left:auto;color:var(--dim);font-size:11px}
+
+  .timeline{position:relative;margin-left:8px;border-left:2px solid var(--line);padding-left:22px}
+  .step{position:relative;margin:0 0 10px}
+  .step::before{content:"";position:absolute;left:-29px;top:8px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--ctx)}
   .step.paper::before{border-color:var(--paper)} .step.extension::before{border-color:var(--ext)}
   .step.context::before{border-color:var(--ctx)} .step.institution::before{border-color:var(--inst)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .step.cur::before{box-shadow:0 0 0 4px rgba(56,189,248,.18)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer}
+  .card:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
   .step.paper .card{border-left:3px solid var(--paper)}
   .step.extension .card{border-left:3px solid var(--ext)}
   .step.context .card{border-left:3px solid var(--ctx);background:var(--panel2)}
   .step.institution .card{border-left:3px solid var(--inst);background:var(--panel2);border-left-style:dashed}
+  .step.cur .card{box-shadow:inset 0 0 0 1px rgba(56,189,248,.4)}
   .card .row1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .card .num{font-family:var(--mono);color:var(--dim);font-size:12px}
   .card .flow{font-family:var(--mono);font-size:12px;color:var(--dim)}
   .card .flow .a{color:var(--txt)}
-  .card .title{font-weight:600;margin-top:2px}
+  .card .title{font-weight:600;margin-top:3px}
   .pill{margin-left:auto;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
   .pill.ok{color:var(--ok)} .pill.fail{color:var(--fail)} .pill.warn{color:var(--warn)} .pill.info{color:var(--info)}
-  .card .detail{color:var(--dim);font-size:13px;margin-top:5px}
+  .card .plain{font-size:13px;margin-top:6px;color:var(--txt)}
+  .card .detail{color:var(--dim);font-size:12.5px;margin-top:6px}
+  .card .detail .uh{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);margin-right:6px}
   .card .tier{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:7px}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .chip{font-family:var(--mono);font-size:11px;color:var(--txt);background:#0c1019;border:1px solid var(--line);
-    border-radius:6px;padding:2px 7px}
+  .chip{font-family:var(--mono);font-size:11px;color:var(--txt);background:#0c1019;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
   .chip b{color:var(--dim);font-weight:500}
-  .boundary{margin:6px 0 16px -24px;display:flex;align-items:center;gap:10px}
+  .boundary{margin:4px 0 10px -22px;display:flex;align-items:center;gap:10px}
   .boundary .bar{flex:1;height:0;border-top:1px dashed var(--ext)}
   .boundary .lbl{font-family:var(--mono);font-size:11px;color:var(--ext);white-space:nowrap;letter-spacing:.04em}
+
+  .gloss{border-bottom:1px dotted var(--dim);cursor:help;position:relative}
+  .gloss:hover,.gloss:focus{color:var(--paper)}
+  .gloss:focus-visible{outline:2px solid var(--paper);outline-offset:2px;border-radius:2px}
+  .gloss::after{content:attr(data-def);position:absolute;left:0;bottom:140%;max-width:min(280px,72vw);width:max-content;z-index:5;
+    background:#060910;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--txt);
+    font:12px/1.45 ui-sans-serif,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);
+    opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none}
+  .gloss:hover::after,.gloss:focus::after{opacity:1;visibility:visible}
+  @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <header>
   <h1>NANDA Protocol Explorer</h1>
-  <span class="sub"><code style="font-family:var(--mono)">AgentName → Index → AgentAddr → AgentFacts → endpoint</code>, verified hop-by-hop — plus the affected-party <b>correction surface</b> (a protocol-layer extension).</span>
+  <div class="tag">See how a client finds an AI agent <b>by name</b> and verifies every step — and what happens when a record is tampered with, a credential is forged, the agent exits, or someone files a complaint. The cryptography is real (precomputed, not mocked).</div>
 </header>
 <div class="layout">
   <aside>
     <div class="group-label">Scenarios</div>
     <div id="scenarios"></div>
 
-    <div class="group-label">Layers</div>
+    <div class="group-label">The four layers</div>
     <div class="panel">
-      <div class="lay"><span class="dot" style="background:var(--paper)"></span><span><span class="nm">NANDA paper</span><br><span class="ds">index · AgentAddr · AgentFacts (the substrate / CORE)</span></span></div>
-      <div class="lay"><span class="dot" style="background:var(--ext)"></span><span><span class="nm">correction surface</span><br><span class="ds">contestation + self-sovereign exit (this work)</span></span></div>
-      <div class="lay"><span class="dot" style="background:var(--ctx)"></span><span><span class="nm">operator-side authorisation</span><br><span class="ds">AuthZEN · Transaction Tokens — cited, not run</span></span></div>
+      <div class="lay"><span class="dot" style="background:var(--paper)"></span><span><span class="nm">NANDA paper</span><br><span class="ds">name lookup · address card (AgentAddr) · agent profile (AgentFacts) — the core</span></span></div>
+      <div class="lay"><span class="dot" style="background:var(--ext)"></span><span><span class="nm">correction surface</span><br><span class="ds">file a complaint (contestation) + retire own identity (exit) — this work</span></span></div>
+      <div class="lay"><span class="dot" style="background:var(--ctx)"></span><span><span class="nm">operator authorisation</span><br><span class="ds">AuthZEN · Transaction Tokens — cited, not run</span></span></div>
       <div class="lay"><span class="dot" style="background:var(--inst)"></span><span><span class="nm">institution</span><br><span class="ds">compel-correction · remedy — out of scope</span></span></div>
     </div>
 
-    <div class="group-label">Identity — minimum trust surface</div>
-    <div class="panel">
-      <div class="ds" style="color:var(--dim);font-size:12.5px">Self-certifying <code style="font-family:var(--mono);color:var(--paper)">did:key</code> — no external resolution, no central anchor required. Holder-severable &amp; rotatable; plural issuers, client-pinned trust. External/central identity anchoring is <b style="color:var(--txt)">unnecessary</b>.</div>
-    </div>
-
-    <div class="group-label">Verification</div>
-    <div class="panel">
-      <div class="ds" style="color:var(--dim);font-size:12.5px"><b style="color:var(--txt)">AgentAddr</b>: Ed25519 over RFC&nbsp;8785 JCS.<br><b style="color:var(--txt)">AgentFacts</b>: W3C VC (vc-jose-cose).<br><b style="color:var(--txt)">Client</b>: fails closed (Zero-Trust Agentic Access).</div>
-    </div>
+    <div class="group-label">Glossary</div>
+    <div class="panel" id="glossary"></div>
   </aside>
 
   <main>
+    <details class="intro" id="intro" open>
+      <summary><span class="chev">▶</span> New here? What am I looking at?</summary>
+      <div class="body">
+        <p><b>NANDA is a verifiable directory for AI agents</b> — think DNS, but every answer is <b>signed</b> and the client checks each one itself, so no hop is ever acted on unverified. (Exactly one key is trusted up front: the index’s signing key, which the client <b>pins</b>.)</p>
+        <p><b>How to read it:</b> pick a scenario on the left, then use the player to step through. Watch the arrows between the actors in the diagram and read the matching step below — each has a plain-English line and the exact mechanism underneath. A step’s coloured left border matches the diagram’s lines: <b style="color:var(--paper)">blue = core</b>, <b style="color:var(--ext)">amber = correction surface</b>, grey = operator context, <b style="color:var(--fail)">red = blocked</b>. The amber boundary marks the <b>correction surface</b>: the affected-party return path added on top of the paper.</p>
+        <p><b>The cryptography is real</b> (nothing is mocked): the Ed25519 signing, JCS canonicalisation and Verifiable-Credential checks run in Python and are precomputed — this page renders the resulting verified trace.</p>
+        <div id="map"></div>
+      </div>
+    </details>
+
+    <div class="group-label">The cast</div>
+    <div class="cast" id="cast"></div>
+
     <div class="summary" id="summary"></div>
     <div class="ids" id="ids"></div>
+
+    <div class="diagram"><div id="swim"></div></div>
+    <div class="key">
+      <span style="color:var(--paper)"><i></i> core protocol</span>
+      <span style="color:var(--ext)"><i></i> correction surface</span>
+      <span style="color:var(--ctx)"><i></i> operator context (not run)</span>
+      <span style="color:var(--fail)"><i></i> blocked · fail closed</span>
+    </div>
+    <div class="player">
+      <button id="prev" aria-label="Previous step">◀</button>
+      <button id="play" aria-label="Play" aria-pressed="false">▶ Play</button>
+      <button id="next" aria-label="Next step">▶</button>
+      <span class="count" id="count"></span>
+      <span class="hint">click a step · ← → keys · space to play</span>
+    </div>
+
     <div class="timeline" id="timeline"></div>
   </main>
 </div>
 
 <script>
-const esc = s => String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
-// Static-first (relative paths → works on GitHub Pages / any subpath), live API fallback.
-async function fetchScenarios(){
-  try{return await getJSON("data/scenarios.json");}catch(e1){
-    try{return await getJSON("api/scenarios");}catch(e2){
-      document.getElementById("summary").textContent=
-        "Could not load scenario data — open via a static host or run the explorer backend.";
-      throw e2;
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+// ---- glossary -------------------------------------------------------------
+const TERMS = {
+  "AgentName":"A human-readable name for an agent, like a username.",
+  "AgentAddr":"The small, signed “address card” the directory returns — where to find the agent and how to verify it.",
+  "AgentFacts":"The agent’s detailed profile (skills, endpoints, audits), carried as signed credentials.",
+  "did:key":"A self-contained identity: the ID itself contains the public key, so anyone can verify it with no central registry or lookup.",
+  "Ed25519":"A widely-used digital-signature algorithm — fast, small, and hard to forge.",
+  "JCS":"RFC 8785 — a fixed way to write JSON so signer and verifier always sign the exact same bytes.",
+  "RFC 8785":"JCS — a fixed way to write JSON so signer and verifier sign the exact same bytes.",
+  "W3C VC":"Verifiable Credential — a standard, signed statement an issuer makes about a subject, checkable by anyone.",
+  "VC":"Verifiable Credential — a standard, signed statement an issuer makes about a subject, checkable by anyone.",
+  "JWT":"JSON Web Token — a compact, signed token; here it is the envelope that carries a Verifiable Credential.",
+  "issuer":"Whoever signs a credential — here, the provider and an independent auditor.",
+  "fail closed":"If any check does not pass, stop completely — never proceed on something unverified.",
+  "pinned":"The client decides in advance exactly which key it trusts; a valid signature from any other key is still rejected.",
+  "revocation":"An issuer withdrawing a credential it previously signed.",
+  "severance":"The agent retiring its own identity with its own key; clients that resolve it afterwards are refused and pointed to a successor.",
+  "self-sovereign":"The agent controls its own identity key — no central registry can revoke or transfer it on the agent’s behalf.",
+  "contestation":"A signed complaint from a party the agent acted on, carried alongside the agent’s own claims.",
+  "correction surface":"The mechanisms added on top of the core so a party that was acted on can complain, and an agent can retire its own identity — the extension this work adds.",
+  "threshold":"Requiring more than one independent issuer to agree before the facts are trusted.",
+  "resolver":"The index’s signing key. The client pins it, so only address cards signed by this exact key are accepted.",
+  "AuthZEN":"An open standard for asking an authorisation server whether an action is permitted.",
+  "Txn-Tokens":"Short-lived, signed tokens that carry request context across the services in an operator’s stack.",
+  "Transaction Tokens":"Short-lived, signed tokens that carry request context across the services in an operator’s stack.",
+};
+const TERM_KEYS = Object.keys(TERMS).sort((a,b)=>b.length-a.length);
+const GLOSS_RE = new RegExp(
+  "(?<![\\w-])(" + TERM_KEYS.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|") + ")(?![\\w-])","g");
+function glossify(escaped){
+  const seen=new Set();
+  return escaped.replace(GLOSS_RE,(m)=>{
+    if(seen.has(m)) return m;            // gloss only the first occurrence of each term
+    seen.add(m);
+    return `<span class="gloss" tabindex="0" data-def="${esc(TERMS[m]||"")}">${m}</span>`;
+  });
+}
+function renderGlossary(){
+  document.getElementById("glossary").innerHTML = TERM_KEYS
+    .slice().sort((a,b)=>a.localeCompare(b))
+    .map(t=>`<div class="gl"><b>${esc(t)}</b> — <span>${esc(TERMS[t])}</span></div>`).join("");
+}
+
+// ---- icons (inline SVG) ---------------------------------------------------
+const I = {
+  "You":'<path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  "Index":'<rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  "Facts host":'<rect x="3.5" y="5" width="17" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3.5" y="13" width="17" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="8" r="1" fill="currentColor"/><circle cx="7" cy="16" r="1" fill="currentColor"/>',
+  "Provider":'<path d="M4 20V9l8-5 8 5v11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  "Auditor":'<circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 11l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  "Agent":'<rect x="5" y="8" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="4" r="1.4" fill="currentColor"/><circle cx="9.5" cy="13" r="1.2" fill="currentColor"/><circle cx="14.5" cy="13" r="1.2" fill="currentColor"/>',
+  "Affected party":'<path d="M12 21s-7-4.5-7-9.5A3.5 3.5 0 0112 8a3.5 3.5 0 017 3.5C19 16.5 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+};
+function icon(name){return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${I[name]||""}</svg>`;}
+
+const CAST = [
+  {name:"You",role:"verifier",ds:"The client. Resolves the agent and verifies every step; trusts nothing it can’t check itself."},
+  {name:"Index",role:"trusted",ds:"A lean directory. Returns a signed address card — its signing key is pinned by the client, but it signs only the pointer, not the facts."},
+  {name:"Facts host",role:"untrusted",ds:"Stores and serves the agent’s profile. Untrusted: it signs nothing — trust comes from the issuers."},
+  {name:"Provider",role:"trusted",ds:"Issues a signed credential describing its own agent (carried inside the bundle)."},
+  {name:"Auditor",role:"trusted",ds:"An independent reviewer who signs a corroborating credential (also in the bundle)."},
+  {name:"Agent",role:"target",ds:"The endpoint you finally call — only after every check passes."},
+  {name:"Affected party",role:"claimant",ds:"A party the agent acted on. Can file a signed, standing-checked complaint that travels with the agent’s profile."},
+];
+function renderCast(){
+  document.getElementById("cast").innerHTML = CAST.map(a=>
+    `<div class="actor"><div class="top">${icon(a.name)}<span class="nm">${esc(a.name)}</span>
+      <span class="role ${a.role}">${esc(a.role)}</span></div>
+      <div class="ds">${esc(a.ds)}</div></div>`).join("");
+}
+
+// ---- architecture map (static SVG) ---------------------------------------
+function renderMap(){
+  const node=(x,y,w,h,name)=>`<g transform="translate(${x},${y})">
+    <rect width="${w}" height="${h}" rx="9" fill="#121722" stroke="#2a3446"/>
+    <g transform="translate(11,${h/2-11})" color="#38bdf8">${icon(name).replace('class="ic"','width="22" height="22"')}</g>
+    <text x="40" y="${h/2+4}" fill="#c9d4e3" font-size="13" font-family="ui-sans-serif,system-ui">${esc(name)}</text></g>`;
+  const lbl=(x,y,t,c)=>`<text x="${x}" y="${y}" fill="${c||'#7c8aa0'}" font-size="11" font-family="ui-monospace,monospace" text-anchor="middle">${esc(t)}</text>`;
+  document.getElementById("map").innerHTML=`
+  <svg class="map" viewBox="0 0 820 340" role="img" aria-label="How the actors fit together: the client resolves the index, fetches facts from an untrusted host, verifies credentials signed by the provider and auditor, then acts on the agent.">
+    <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c8aa0"/></marker>
+      <marker id="ahb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#38bdf8"/></marker></defs>
+    ${node(30,148,150,58,"You")}
+    ${node(330,28,160,56,"Index")}
+    ${node(330,150,160,58,"Facts host")}
+    ${node(330,272,160,58,"Agent")}
+    ${node(610,124,170,46,"Provider")}
+    ${node(610,182,170,46,"Auditor")}
+    <path d="M180,160 C260,120 280,70 330,60" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahb)"/>
+    ${lbl(258,108,"① resolve by name","#38bdf8")}
+    <path d="M330,78 C270,120 250,150 180,172" fill="none" stroke="#7c8aa0" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+    ${lbl(252,150,"② signed AgentAddr")}
+    <path d="M180,182 L330,179" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahb)"/>
+    ${lbl(255,174,"③ fetch AgentFacts","#38bdf8")}
+    <path d="M330,196 L182,196" fill="none" stroke="#7c8aa0" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+    ${lbl(255,210,"(untrusted host)")}
+    <path d="M610,146 L492,172" fill="none" stroke="#7c8aa0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+    <path d="M610,202 L492,188" fill="none" stroke="#7c8aa0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+    ${lbl(560,150,"sign the VCs")}
+    <path d="M150,206 C150,250 230,280 330,295" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahb)"/>
+    ${lbl(208,300,"④ act — only if every check passes","#38bdf8")}
+    <text x="105" y="232" fill="#7c8aa0" font-size="10.5" font-family="ui-monospace,monospace" text-anchor="middle">verifies every hop · fails closed</text>
+    <line x1="0" y1="324" x2="820" y2="324" stroke="#f5b342" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="820" y="338" fill="#f5b342" font-size="11" font-family="ui-monospace,monospace" text-anchor="end">correction surface — contest · exit (this work)</text>
+  </svg>`;
+}
+
+// ---- swimlane sequence diagram -------------------------------------------
+const ORDER=["You","Affected party","Index","Facts host","Provider","Auditor","Agent"];
+function stepColor(s){
+  if(s.status==="fail")return "#f87171";
+  if(s.status==="warn")return "#fbbf24";
+  if(s.layer==="extension")return "#f5b342";
+  if(s.layer==="context")return "#7c8aa0";
+  return "#38bdf8";
+}
+const MK={ "#38bdf8":"s-blue","#f5b342":"s-amber","#f87171":"s-fail","#fbbf24":"s-warn","#7c8aa0":"s-dim" };
+const lab=(t,n)=>{t=String(t||"");return t.length>n?t.slice(0,n-1)+"…":t;};
+function buildSwim(d,cur){
+  const steps=d.steps;
+  const present=new Set();
+  steps.forEach(s=>[s.from,s.to].forEach(a=>{if(a&&a!=="—")present.add(a);}));
+  const cols=ORDER.filter(a=>present.has(a)).concat([...present].filter(a=>!ORDER.includes(a)));
+  const W=760, padX=(cols.length>4?70:110);
+  const span = cols.length>1 ? (W-2*padX)/(cols.length-1) : 0;
+  const colX={}; cols.forEach((c,i)=>colX[c]= cols.length>1 ? padX+i*span : W/2);
+  const top=58, rowH=46;
+  const H = top + steps.length*rowH + 26;
+  const rowY=i=>top + i*rowH + 22;
+
+  let svg=`<svg class="swim" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sequence of ${steps.length} steps between the actors for this scenario">
+    <defs>
+      <marker id="s-blue" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#38bdf8"/></marker>
+      <marker id="s-amber" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#f5b342"/></marker>
+      <marker id="s-fail" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#f87171"/></marker>
+      <marker id="s-warn" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#fbbf24"/></marker>
+      <marker id="s-dim" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c8aa0"/></marker>
+    </defs>`;
+
+  cols.forEach(c=>{
+    const x=colX[c];
+    svg+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${H-12}" stroke="#232a36" stroke-width="1.4" stroke-dasharray="3 4"/>`;
+    svg+=`<g transform="translate(${x-11},14)" color="#9fb0c6">${icon(c).replace('class="ic"','width="22" height="22"')}</g>`;
+    svg+=`<text x="${x}" y="52" fill="#9fb0c6" font-size="11" font-family="ui-sans-serif,system-ui" text-anchor="middle">${esc(c)}</text>`;
+  });
+
+  const bIdx=steps.findIndex(s=>s.boundary);
+  if(bIdx>=0){
+    const y=rowY(bIdx)-rowH/2;
+    svg+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#f5b342" stroke-width="1" stroke-dasharray="5 4" opacity=".8"/>`;
+    svg+=`<text x="${W-4}" y="${y-4}" fill="#f5b342" font-size="10" font-family="ui-monospace,monospace" text-anchor="end">correction surface ▼</text>`;
+  }
+
+  steps.forEach((s,i)=>{
+    const y=rowY(i); const col=stepColor(s); const marker=MK[col]||"s-blue";
+    svg+=`<rect class="rowbg" x="0" y="${y-rowH/2}" width="${W}" height="${rowH}" fill="${i===cur?'rgba(56,189,248,.08)':'transparent'}"/>`;
+    if(s.to==="—"){
+      svg+=`<line x1="40" y1="${y}" x2="${W-40}" y2="${y}" stroke="${col}" stroke-width="1.2" stroke-dasharray="2 4" opacity=".7"/>`;
+      svg+=`<text x="${W/2}" y="${y-6}" fill="${col}" font-size="10.5" font-family="ui-monospace,monospace" text-anchor="middle" opacity=".85">${esc(lab(s.title,40))}</text>`;
+    } else if(s.from===s.to){
+      const x=colX[s.from]||W/2;
+      svg+=`<path d="M${x},${y-9} C${x+34},${y-9} ${x+34},${y+9} ${x},${y+9}" fill="none" stroke="${col}" stroke-width="${i===cur?2.4:1.6}" marker-end="url(#${marker})"/>`;
+      svg+=`<text x="${x+40}" y="${y+4}" fill="${col}" font-size="10.5" font-family="ui-monospace,monospace">${esc(lab(s.title,26))}</text>`;
+    } else {
+      const x1=colX[s.from]||60, x2=colX[s.to]||W-60;
+      svg+=`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${col}" stroke-width="${i===cur?2.6:1.7}" marker-end="url(#${marker})"/>`;
+      svg+=`<text x="${(x1+x2)/2}" y="${y-6}" fill="${col}" font-size="10.5" font-family="ui-monospace,monospace" text-anchor="middle">${esc(lab(s.title,34))}</text>`;
     }
+    svg+=`<circle cx="22" cy="${y}" r="11" fill="${i===cur?col:'#121722'}" stroke="${col}" stroke-width="1.4"/>`;
+    svg+=`<text x="22" y="${y+4}" fill="${i===cur?'#0b0e14':col}" font-size="11" font-family="ui-monospace,monospace" text-anchor="middle">${s.n}</text>`;
+    svg+=`<rect class="hit" data-n="${i}" x="0" y="${y-rowH/2}" width="${W}" height="${rowH}"><title>${esc(s.title)}</title></rect>`;
+  });
+
+  svg+=`</svg>`;
+  return svg;
+}
+
+// ---- step list (current expanded; plain line always visible) --------------
+function chips(data){
+  const ks=Object.keys(data||{});
+  if(!ks.length) return "";
+  return `<div class="chips">`+ks.map(k=>`<span class="chip"><b>${esc(k)}</b> ${esc(data[k])}</span>`).join("")+`</div>`;
+}
+function renderSteps(d,cur){
+  const tl=document.getElementById("timeline"); tl.innerHTML="";
+  let drewBoundary=false;
+  d.steps.forEach((s,i)=>{
+    if(s.boundary && !drewBoundary){
+      drewBoundary=true;
+      const b=document.createElement("div"); b.className="boundary";
+      b.innerHTML=`<span class="lbl">▲ NANDA paper (the core)</span><span class="bar"></span><span class="lbl">correction surface — extension ▼</span>`;
+      tl.appendChild(b);
+    }
+    const open = i===cur;
+    const div=document.createElement("div"); div.className="step "+s.layer+(open?" cur":"");
+    div.innerHTML=`<div class="card" data-n="${i}" role="button" tabindex="0" aria-label="Step ${s.n}: ${esc(s.title)}">
+        <div class="row1">
+          <span class="num">${s.n}</span>
+          <span class="flow"><span class="a">${esc(s.from)}</span> → <span class="a">${esc(s.to)}</span></span>
+          <span class="pill ${s.status}">${esc(s.status)}</span>
+        </div>
+        <div class="title">${glossify(esc(s.title))}</div>
+        ${s.plain?`<div class="plain">${glossify(esc(s.plain))}</div>`:""}
+        ${open?`
+          ${s.detail?`<div class="detail"><span class="uh">under the hood</span>${glossify(esc(s.detail))}</div>`:""}
+          ${s.tier?`<div class="tier">${esc(s.tier)}</div>`:""}
+          ${chips(s.data)}`:""}
+      </div>`;
+    tl.appendChild(div);
+  });
+  tl.querySelectorAll(".card").forEach(c=>{
+    const jump=()=>{stop();setCurrent(+c.dataset.n,true);};
+    c.onclick=jump;
+    c.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();jump();} };
+  });
+}
+
+// ---- state + player -------------------------------------------------------
+let DATA=null, CUR=0, timer=null, loadSeq=0;
+function setCurrent(n,scroll){
+  if(!DATA) return;
+  CUR=Math.max(0,Math.min(DATA.steps.length-1,n));
+  document.getElementById("swim").innerHTML=buildSwim(DATA,CUR);
+  document.getElementById("swim").querySelectorAll(".hit").forEach(h=>h.onclick=()=>{stop();setCurrent(+h.dataset.n,true);});
+  renderSteps(DATA,CUR);
+  document.getElementById("count").textContent=`step ${CUR+1} / ${DATA.steps.length}`;
+  if(scroll){
+    const card=document.querySelector(".step.cur");
+    if(card) card.scrollIntoView({block:"nearest",behavior:REDUCED?"auto":"smooth"});
   }
 }
-async function fetchWalk(scn){
-  const q=encodeURIComponent(scn);
-  try{return await getJSON("data/"+q+".json");}catch(e1){
-    try{return await getJSON("api/walk?scenario="+q);}catch(e2){
-      document.getElementById("summary").textContent=
-        "Could not load scenario data — open via a static host or run the explorer backend.";
-      throw e2;
-    }
-  }
+function stop(){
+  if(timer){clearInterval(timer);timer=null;}
+  const p=document.getElementById("play"); p.textContent="▶ Play"; p.setAttribute("aria-pressed","false"); p.setAttribute("aria-label","Play");
+}
+function play(){
+  if(timer){stop();return;}
+  if(!DATA) return;
+  if(CUR>=DATA.steps.length-1) setCurrent(0,true);   // restart, shown immediately
+  const p=document.getElementById("play"); p.textContent="❚❚ Pause"; p.setAttribute("aria-pressed","true"); p.setAttribute("aria-label","Pause");
+  timer=setInterval(()=>{ if(CUR>=DATA.steps.length-1){stop();return;} setCurrent(CUR+1,true); },1400);
 }
 
 function renderSummary(d){
   const el=document.getElementById("summary");
   const cls=d.refused?"fail":"ok";
   el.innerHTML=`<span class="badge ${cls}">${d.refused?"FAIL CLOSED":"VERIFIED"}</span>
-    <span><b style="color:var(--txt)">${esc(d.title)}</b><br><span style="color:var(--dim);font-size:13px">${esc(d.summary)}</span></span>`;
+    <span><b style="color:var(--txt)">${esc(d.title)}</b><br><span style="color:var(--dim);font-size:13px">${glossify(esc(d.summary))}</span></span>`;
 }
 function renderIds(d){
   const i=d.identities||{};
   document.getElementById("ids").innerHTML=
-    `<span><b>resolver</b> <code>${esc(i.resolver)}</code></span>
+    `<span><b>index resolver</b> <code>${esc(i.resolver)}</code></span>
      <span><b>provider issuer</b> <code>${esc(i.provider_issuer)}</code></span>
      <span><b>auditor issuer</b> <code>${esc(i.auditor_issuer)}</code></span>
      <span><b>agent</b> <code>${esc(i.agent)}</code></span>`;
 }
-function chips(data){
-  const ks=Object.keys(data||{});
-  if(!ks.length) return "";
-  return `<div class="chips">`+ks.map(k=>`<span class="chip"><b>${esc(k)}</b> ${esc(data[k])}</span>`).join("")+`</div>`;
+
+// ---- data loading (static-first, API fallback) ----------------------------
+async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
+async function fetchScenarios(){
+  try{return await getJSON("data/scenarios.json");}catch(e1){
+    try{return await getJSON("api/scenarios");}catch(e2){fail();throw e2;}}
 }
-function renderSteps(d){
-  const tl=document.getElementById("timeline"); tl.innerHTML="";
-  let drewBoundary=false;
-  for(const s of d.steps){
-    if(s.boundary && !drewBoundary){
-      drewBoundary=true;
-      const b=document.createElement("div"); b.className="boundary";
-      b.innerHTML=`<span class="lbl">▲ NANDA paper — the substrate</span><span class="bar"></span><span class="lbl">correction surface — extension ▼</span>`;
-      tl.appendChild(b);
-    }
-    const div=document.createElement("div"); div.className="step "+s.layer;
-    div.innerHTML=`<div class="card">
-        <div class="row1">
-          <span class="num">${s.n}</span>
-          <span class="flow"><span class="a">${esc(s.from)}</span> → <span class="a">${esc(s.to)}</span></span>
-          <span class="pill ${s.status}">${esc(s.status)}</span>
-        </div>
-        <div class="title">${esc(s.title)}</div>
-        <div class="detail">${esc(s.detail)}</div>
-        ${s.tier?`<div class="tier">${esc(s.tier)}</div>`:""}
-        ${chips(s.data)}
-      </div>`;
-    tl.appendChild(div);
-  }
+async function fetchWalk(scn){
+  const q=encodeURIComponent(scn);
+  try{return await getJSON("data/"+q+".json");}catch(e1){
+    try{return await getJSON("api/walk?scenario="+q);}catch(e2){fail();throw e2;}}
+}
+function fail(){
+  document.getElementById("summary").innerHTML=
+    `<span class="badge fail">offline</span><span>Could not load scenario data — open via a static host (e.g. GitHub Pages) or run the explorer backend.</span>`;
 }
 
-let current="resolve";
 async function load(scn){
-  current=scn;
+  const seq=++loadSeq;
   document.querySelectorAll("button.scn").forEach(b=>b.classList.toggle("active",b.dataset.k===scn));
-  const d=await fetchWalk(scn);
-  renderSummary(d); renderIds(d); renderSteps(d);
+  stop();
+  let data;
+  try{ data=await fetchWalk(scn); }catch(e){ return; }
+  if(seq!==loadSeq) return;            // a newer scenario load started — drop this stale one
+  DATA=data; renderSummary(DATA); renderIds(DATA); setCurrent(0,false);
 }
 async function init(){
-  const {scenarios}=await fetchScenarios();
+  renderGlossary(); renderCast(); renderMap();
+  document.getElementById("prev").onclick=()=>{stop();setCurrent(CUR-1,true);};
+  document.getElementById("next").onclick=()=>{stop();setCurrent(CUR+1,true);};
+  document.getElementById("play").onclick=play;
+  window.addEventListener("keydown",e=>{
+    const t=e.target;
+    if(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="BUTTON"||(t.closest&&t.closest(".gloss")))return;
+    if(e.key==="ArrowRight"){stop();setCurrent(CUR+1,true);}
+    else if(e.key==="ArrowLeft"){stop();setCurrent(CUR-1,true);}
+    else if(e.key===" "){e.preventDefault();play();}
+  });
+  let scenarios;
+  try{({scenarios}=await fetchScenarios());}catch(e){return;}
   const box=document.getElementById("scenarios");
   box.innerHTML=scenarios.map(s=>
     `<button class="scn" data-k="${esc(s.key)}"><span class="k">${esc(s.key)}</span><span class="d">${esc(s.title)}</span></button>`).join("");

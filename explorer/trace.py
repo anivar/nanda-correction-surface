@@ -10,6 +10,9 @@ NANDA paper specifies and what is the contribution on top:
   context      — operator-side authorisation (AuthZEN, Txn-Tokens) — cited, not run
   institution  — compel-correction / remedy — named, not a protocol (out of scope)
 
+Each step also carries a `plain` line: an everyday-language explanation of what is
+happening and why it matters, shown above the precise technical detail.
+
 The trace deliberately mirrors client/resolver.py (the authoritative verifier);
 it exists for visualisation, sharing the same nanda_core primitives.
 """
@@ -37,6 +40,17 @@ from nanda_core.models import (
 )
 
 PAPER, EXTENSION, CONTEXT, INSTITUTION = "paper", "extension", "context", "institution"
+
+# The cast of actors, in swimlane order. Used by the UI to lay out lifelines.
+YOU, INDEX, FACTS, PROVIDER, AUDITOR, AGENT, PARTY = (
+    "You",
+    "Index",
+    "Facts host",
+    "Provider",
+    "Auditor",
+    "Agent",
+    "Affected party",
+)
 
 SCENARIOS = {
     "resolve": "Resolve an agent — verify every hop, then act",
@@ -133,7 +147,16 @@ def walk(scenario: str) -> dict:
     steps: list[dict] = []
 
     def step(
-        frm, to, title, detail, status="info", layer=PAPER, tier="", data=None, boundary=False
+        frm,
+        to,
+        title,
+        detail,
+        plain="",
+        status="info",
+        layer=PAPER,
+        tier="",
+        data=None,
+        boundary=False,
     ):
         steps.append(
             {
@@ -142,6 +165,7 @@ def walk(scenario: str) -> dict:
                 "to": to,
                 "title": title,
                 "detail": detail,
+                "plain": plain,
                 "status": status,
                 "layer": layer,
                 "tier": tier,
@@ -155,10 +179,12 @@ def walk(scenario: str) -> dict:
     if scenario == "tamper":
         addr["primary_facts_url"] = "https://evil.example/facts"  # path attacker mutates
     step(
-        "Client",
-        "Index",
+        YOU,
+        INDEX,
         "Resolve AgentName → AgentAddr",
         "urn:agent:acme:translator",
+        plain="Look the agent up by its name and get back a small, signed "
+        "“address card” saying where to find it.",
         layer=PAPER,
         tier="Tier 1 · Lean Index",
         data={
@@ -173,12 +199,16 @@ def walk(scenario: str) -> dict:
         "resolver"
     ].did and crypto.verify_record(addr, decode_did_key(w["resolver"].did))
     step(
-        "Client",
-        "Client",
+        YOU,
+        YOU,
         "Verify AgentAddr — Ed25519 over JCS, resolver pinned",
         "signature valid; signed by the pinned index resolver"
         if ok
         else "signature INVALID — record was tampered with",
+        plain="Check the card was signed by the one directory key you already trust. "
+        "A valid signature from the wrong key is still refused."
+        if ok
+        else "The card was altered after signing, so its signature no longer matches. Stop here.",
         status="ok" if ok else "fail",
         layer=PAPER,
         tier="Tier 1",
@@ -189,19 +219,23 @@ def walk(scenario: str) -> dict:
     # --- Hop 2: select facts source --------------------------------------------
     private = scenario == "privacy"
     step(
-        "Client",
-        "Client",
+        YOU,
+        YOU,
         "Select AgentFacts source",
         "privacy path → NEUTRAL host (agent's domain never sees the request)"
         if private
         else "primary path → provider domain",
+        plain="Read the agent's details from a neutral host, so the agent's own "
+        "site never learns who is asking about it."
+        if private
+        else "Decide where to read the agent's details from — here, the provider's own site.",
         status="ok",
         layer=PAPER,
         tier="Tier 2",
     )
 
     # --- Hop 3: fetch facts bundle ---------------------------------------------
-    host = "Neutral Host" if private else "Provider Host"
+    host_kind = "neutral host" if private else "provider host"
     bundle = copy.deepcopy(w["bundle"])
     if scenario == "spoof":
         rogue = Identity.generate("Rogue Issuer (untrusted)")
@@ -231,10 +265,12 @@ def walk(scenario: str) -> dict:
             w["agent"], "nanda:translator-001", successor_did=successor.did, reason="key rotation"
         )
     step(
-        "Client",
-        host,
+        YOU,
+        FACTS,
         "Fetch AgentFacts bundle",
-        f"GET from the {host.lower()} (untrusted; it signs nothing)",
+        f"GET from the {host_kind} (untrusted; it signs nothing)",
+        plain="Download the agent's profile. This host only stores files — it cannot "
+        "vouch for anything, so trust will come from the signed credentials inside.",
         status="ok",
         layer=PAPER,
         tier="Tier 2",
@@ -244,11 +280,14 @@ def walk(scenario: str) -> dict:
     sev = bundle.get("severance")
     if sev and severance.verify_severance(sev, expected_agent_did=addr.get("agent_did")):
         step(
-            "Client",
-            "Client",
+            YOU,
+            YOU,
             "Exit gate — self-sovereign severance",
-            "identity SEVERED by its own key → prior authority inexecutable · successor "
-            + _short(sev.get("successor_did")),
+            "identity SEVERED by its own key → prior authority inexecutable "
+            "(existing permissions void) · successor " + _short(sev.get("successor_did")),
+            plain="The agent has retired this identity using its own key. Any client that "
+            "resolves it now is refused (the client fails closed) and is pointed to the "
+            "named successor instead.",
             status="fail",
             layer=EXTENSION,
             tier="Correction surface · EXIT",
@@ -266,15 +305,20 @@ def walk(scenario: str) -> dict:
         )
 
     # --- Hop 4: verify provider VC (Tier 2) ------------------------------------
+    # The credential is already in the bundle the client holds; verification is a
+    # LOCAL self-check (no live call to the issuer), so the swimlane shows You→You.
     try:
         provider_cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers=w["trusted"])
         if provider_cred["credentialSubject"]["id"] != addr.get("agent_did"):
             raise vc.VCError("provider VC subject ≠ signed agent_did")
         step(
-            "Client",
-            "Client",
+            YOU,
+            YOU,
             "Verify provider credential — W3C VC (JWT)",
             f"issuer {_short(provider_cred['issuer'])} · trusted · bound to agent_did",
+            plain="Check the provider's signed claim (already in the downloaded bundle) — "
+            "and that it is really about THIS agent, so a valid claim about someone else "
+            "can't be swapped in.",
             status="ok",
             layer=PAPER,
             tier="Tier 2 · AgentFacts",
@@ -282,10 +326,12 @@ def walk(scenario: str) -> dict:
     except vc.VCError as exc:
         msg = _short_exc(exc)
         step(
-            "Client",
-            "Client",
+            YOU,
+            YOU,
             "Verify provider credential — W3C VC (JWT)",
             f"REJECTED: {msg}",
+            plain="The claim is signed by someone the client doesn't trust (or was "
+            "tampered with), so it is rejected.",
             status="fail",
             layer=PAPER,
             tier="Tier 2 · AgentFacts",
@@ -298,11 +344,13 @@ def walk(scenario: str) -> dict:
     auditor_cred = vc.verify_credential(bundle["auditor_vc"], trusted_issuers=w["trusted"])
     ev = auditor_cred["credentialSubject"].get("evaluations", {})
     step(
-        "Auditor",
-        "Client",
+        YOU,
+        YOU,
         "Verify auditor credential — independent issuer",
         f"performanceScore {ev.get('performanceScore')} · "
         f"availability {ev.get('availability90d')} · subject matches",
+        plain="Check a second, independent reviewer's signed claim (also in the bundle) "
+        "about the same agent. Two independent signers must agree before the facts are trusted.",
         status="ok",
         layer=PAPER,
         tier="Tier 2 · threshold met",
@@ -319,10 +367,13 @@ def walk(scenario: str) -> dict:
     if surfaced:
         v = surfaced[0]
         step(
-            _short(v.contestant),
-            "Client",
+            PARTY,
+            YOU,
             "Surface contestation — affected-party counter-claim",
             f"[{v.category}] “{v.statement}” · standing verified",
+            plain="A party the agent acted on has filed a signed complaint — verified "
+            "against a receipt the agent itself signed, so it can't be faked. The client "
+            "surfaces it next to the issuers' claims, rather than silently dropping it.",
             status="warn",
             layer=EXTENSION,
             tier="Correction surface · CONTEST",
@@ -331,10 +382,12 @@ def walk(scenario: str) -> dict:
         )
     else:
         step(
-            "Client",
-            "Client",
+            YOU,
+            YOU,
             "Surface contestations — affected-party return path",
             "none on record (the affected-party channel the operator-side stack omits)",
+            plain="No complaints on file. This return path for parties the agent acted "
+            "on is the piece the rest of the stack leaves out.",
             status="info",
             layer=EXTENSION,
             tier="Correction surface",
@@ -343,22 +396,25 @@ def walk(scenario: str) -> dict:
 
     # --- CONTEXT marker: operator-side authz (cited, not run) -------------------
     step(
-        "Client",
+        YOU,
         "—",
-        "Authorization (operator-side) — context, not run here",
+        "Authorisation (operator-side) — context, not run here",
         "AuthZEN · Txn-Tokens-for-Agents · delegation layers — decide if the action MAY proceed",
+        plain="Separately, an operator decides whether this action is allowed at all. "
+        "That layer is cited here for context — this demo does not run it.",
         status="info",
         layer=CONTEXT,
-        tier="Operator-side authz",
+        tier="Operator-side authorisation",
     )
 
     # --- Hop 6: act on verified endpoint (Tier 3) ------------------------------
     endpoint = (provider_cred["credentialSubject"].get("endpoints") or {}).get("static", ["—"])[0]
     step(
-        "Client",
-        "Agent",
+        YOU,
+        AGENT,
         "Act on the verified endpoint",
         f"POST {endpoint} → response",
+        plain="Every check passed, so now it is safe to actually call the agent.",
         status="ok",
         layer=PAPER,
         tier="Tier 3 · Endpoint",

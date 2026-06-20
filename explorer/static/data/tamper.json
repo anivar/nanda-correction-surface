@@ -6,16 +6,17 @@
   "steps": [
     {
       "n": 1,
-      "from": "Client",
+      "from": "You",
       "to": "Index",
       "title": "Resolve AgentName \u2192 AgentAddr",
       "detail": "urn:agent:acme:translator",
+      "plain": "Look the agent up by its name and get back a small, signed \u201caddress card\u201d saying where to find it.",
       "status": "info",
       "layer": "paper",
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6MkoqmJmv\u2026",
+        "agent_did": "did:key:z6Mktf6ron\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -23,10 +24,11 @@
     },
     {
       "n": 2,
-      "from": "Client",
-      "to": "Client",
+      "from": "You",
+      "to": "You",
       "title": "Verify AgentAddr \u2014 Ed25519 over JCS, resolver pinned",
       "detail": "signature INVALID \u2014 record was tampered with",
+      "plain": "The card was altered after signing, so its signature no longer matches. Stop here.",
       "status": "fail",
       "layer": "paper",
       "tier": "Tier 1",
@@ -35,9 +37,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6Mkgj4osJ\u2026",
-    "provider_issuer": "did:key:z6Mkfyk6pM\u2026",
-    "auditor_issuer": "did:key:z6MksStVg9\u2026",
-    "agent": "did:key:z6MkoqmJmv\u2026"
+    "resolver": "did:key:z6MksZLjWr\u2026",
+    "provider_issuer": "did:key:z6MknJ3N4H\u2026",
+    "auditor_issuer": "did:key:z6MkvBHySm\u2026",
+    "agent": "did:key:z6Mktf6ron\u2026"
   }
 }
