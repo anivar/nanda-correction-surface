@@ -1,0 +1,289 @@
+{
+  "$defs": {
+    "Authentication": {
+      "properties": {
+        "methods": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Methods",
+          "type": "array"
+        },
+        "requiredScopes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Requiredscopes",
+          "type": "array"
+        }
+      },
+      "title": "Authentication",
+      "type": "object"
+    },
+    "Capabilities": {
+      "properties": {
+        "modalities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modalities",
+          "type": "array"
+        },
+        "streaming": {
+          "default": false,
+          "title": "Streaming",
+          "type": "boolean"
+        },
+        "batch": {
+          "default": false,
+          "title": "Batch",
+          "type": "boolean"
+        },
+        "authentication": {
+          "$ref": "#/$defs/Authentication"
+        }
+      },
+      "title": "Capabilities",
+      "type": "object"
+    },
+    "Endpoints": {
+      "properties": {
+        "static": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Static",
+          "type": "array"
+        },
+        "rotating": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rotating",
+          "type": "array"
+        },
+        "adaptive_resolver": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adaptive Resolver"
+        }
+      },
+      "title": "Endpoints",
+      "type": "object"
+    },
+    "Evaluations": {
+      "properties": {
+        "performanceScore": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Performancescore"
+        },
+        "availability90d": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Availability90D"
+        },
+        "lastAudited": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lastaudited"
+        },
+        "auditorID": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auditorid"
+        }
+      },
+      "title": "Evaluations",
+      "type": "object"
+    },
+    "Provider": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "did": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Did"
+        }
+      },
+      "required": [
+        "name",
+        "url"
+      ],
+      "title": "Provider",
+      "type": "object"
+    },
+    "Skill": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "inputModes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputmodes",
+          "type": "array"
+        },
+        "outputModes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Outputmodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "description"
+      ],
+      "title": "Skill",
+      "type": "object"
+    }
+  },
+  "description": "The credentialSubject of an AgentFacts VC. Fields map onto (and superset)\nthe Google A2A Agent Card \u2014 see docs/a2a-mapping.md.",
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "agent_name": {
+      "title": "Agent Name",
+      "type": "string"
+    },
+    "label": {
+      "title": "Label",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "documentationUrl": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Documentationurl"
+    },
+    "jurisdiction": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Jurisdiction"
+    },
+    "provider": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Provider"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "endpoints": {
+      "$ref": "#/$defs/Endpoints"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/Capabilities"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/Skill"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "evaluations": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Evaluations"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "id",
+    "agent_name",
+    "label"
+  ],
+  "title": "AgentFactsSubject",
+  "type": "object"
+}

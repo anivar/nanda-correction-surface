@@ -1,0 +1,53 @@
+{
+  "description": "The signed, cacheable pointer record the index returns. Kept lean: it holds\nidentity + pointers + ttl, never the metadata itself.",
+  "properties": {
+    "agent_id": {
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_name": {
+      "title": "Agent Name",
+      "type": "string"
+    },
+    "primary_facts_url": {
+      "title": "Primary Facts Url",
+      "type": "string"
+    },
+    "private_facts_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Private Facts Url"
+    },
+    "adaptive_resolver_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adaptive Resolver Url"
+    },
+    "ttl": {
+      "default": 3600,
+      "title": "Ttl",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_name",
+    "primary_facts_url"
+  ],
+  "title": "AgentAddr",
+  "type": "object"
+}

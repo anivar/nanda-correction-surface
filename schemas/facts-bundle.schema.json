@@ -1,0 +1,54 @@
+{
+  "description": "What lives at primary_facts_url / private_facts_url.\n\n`provider_vc` and `auditor_vc` are JWT-VCs (vc-jose-cose). `contestations` is\nthe return channel: signed counter-claims appended after issuance, by parties\nother than the issuers. They are stored as raw signed dicts so their\nsignatures survive round-tripping.",
+  "properties": {
+    "agent_id": {
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_did": {
+      "title": "Agent Did",
+      "type": "string"
+    },
+    "agent_name": {
+      "title": "Agent Name",
+      "type": "string"
+    },
+    "label": {
+      "title": "Label",
+      "type": "string"
+    },
+    "provider_vc": {
+      "title": "Provider Vc",
+      "type": "string"
+    },
+    "auditor_vc": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Auditor Vc"
+    },
+    "contestations": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Contestations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_did",
+    "agent_name",
+    "label",
+    "provider_vc"
+  ],
+  "title": "FactsBundle",
+  "type": "object"
+}

@@ -1,0 +1,34 @@
+{
+  "description": "Evidence that the contestant actually interacted with the agent. Signed by\nthe agent's own key, so it cannot be fabricated by the contestant. This is the\n(stubbed) standing primitive: it binds a counter-claim to a real interaction.",
+  "properties": {
+    "interaction_id": {
+      "title": "Interaction Id",
+      "type": "string"
+    },
+    "agent_did": {
+      "title": "Agent Did",
+      "type": "string"
+    },
+    "counterparty": {
+      "title": "Counterparty",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "timestamp": {
+      "title": "Timestamp",
+      "type": "string"
+    }
+  },
+  "required": [
+    "interaction_id",
+    "agent_did",
+    "counterparty",
+    "timestamp"
+  ],
+  "title": "InteractionReceipt",
+  "type": "object"
+}

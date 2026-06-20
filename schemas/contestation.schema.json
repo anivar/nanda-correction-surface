@@ -1,0 +1,60 @@
+{
+  "description": "A signed counter-claim from a party the agent acted upon. Travels alongside\nAgentFacts and is surfaced to clients next to the issuers' claims.",
+  "properties": {
+    "contestation_id": {
+      "title": "Contestation Id",
+      "type": "string"
+    },
+    "type": {
+      "default": "Contestation",
+      "title": "Type",
+      "type": "string"
+    },
+    "agent_id": {
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_did": {
+      "title": "Agent Did",
+      "type": "string"
+    },
+    "interaction_id": {
+      "title": "Interaction Id",
+      "type": "string"
+    },
+    "contestant": {
+      "title": "Contestant",
+      "type": "string"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "category": {
+      "default": "service-dispute",
+      "title": "Category",
+      "type": "string"
+    },
+    "created": {
+      "title": "Created",
+      "type": "string"
+    },
+    "receipt": {
+      "additionalProperties": true,
+      "title": "Receipt",
+      "type": "object"
+    }
+  },
+  "required": [
+    "contestation_id",
+    "agent_id",
+    "agent_did",
+    "interaction_id",
+    "contestant",
+    "statement",
+    "created",
+    "receipt"
+  ],
+  "title": "Contestation",
+  "type": "object"
+}
