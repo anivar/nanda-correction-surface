@@ -108,9 +108,7 @@ class NandaClient:
         # Exit gate — refuse immediately if the subject has SEVERED this identity.
         # Checked against the index-bound (signed) agent_did + agent_id, before
         # trusting facts, so a severance cannot be replayed onto another entry.
-        self._check_severance(
-            bundle, signed_addr.get("agent_did"), signed_addr.get("agent_id")
-        )
+        self._check_severance(bundle, signed_addr.get("agent_did"), signed_addr.get("agent_id"))
 
         # Hop 4 — verify the provider credential (required)
         self._say(C.hop(4, "Verify provider credential (W3C VC)"))
@@ -255,7 +253,7 @@ class NandaClient:
                     decode_did_key(issuer), crypto.b64u_decode(sig), cid.encode()
                 ):
                     live[cid] = issuer
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 continue
         self._revoked_live = live
 

@@ -80,7 +80,7 @@ def verify_bytes(pub: Ed25519PublicKey, sig: bytes, data: bytes) -> bool:
     try:
         pub.verify(sig, data)
         return True
-    except (InvalidSignature, ValueError, TypeError):
+    except InvalidSignature, ValueError, TypeError:
         # InvalidSignature: mismatch or malformed/wrong-length signature.
         # ValueError/TypeError: non-bytes or otherwise unusable inputs.
         # All are verification failures — fail closed, never propagate.
