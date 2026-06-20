@@ -5,9 +5,9 @@ runs the actual verification, emitting a step-by-step trace the UI renders.
 Every step is tagged with a `layer` so the UI can draw the boundary between what the
 NANDA paper specifies and what is the contribution on top:
 
-  paper        — the NANDA Index resolution flow (arXiv:2507.14263): TASK
+  paper        — the NANDA Index resolution flow (arXiv:2507.14263): CORE
   extension    — the correction surface: contestation + self-sovereign exit
-  context      — operator-side authorization (AuthZEN, Txn-Tokens) — cited, not run
+  context      — operator-side authorisation (AuthZEN, Txn-Tokens) — cited, not run
   institution  — compel-correction / remedy — named, not a protocol (out of scope)
 
 The trace deliberately mirrors client/resolver.py (the authoritative verifier);
@@ -17,6 +17,7 @@ it exists for visualisation, sharing the same nanda_core primitives.
 from __future__ import annotations
 
 import copy
+import re
 
 from issuer import issue_auditor_credential, issue_provider_credential
 from nanda_core import contest, crypto, severance, vc
@@ -51,6 +52,14 @@ def _short(did: str | None) -> str:
     if not did:
         return "—"
     return did[:18] + "…" if len(did) > 20 else did
+
+
+_DID_RE = re.compile(r"did:[a-z]+:[A-Za-z0-9._%-]{10,}")
+
+
+def _short_exc(exc: Exception) -> str:
+    """Return the exception message with any embedded DIDs truncated via _short."""
+    return _DID_RE.sub(lambda m: _short(m.group()), str(exc))
 
 
 def _world():
@@ -271,17 +280,18 @@ def walk(scenario: str) -> dict:
             tier="Tier 2 · AgentFacts",
         )
     except vc.VCError as exc:
+        msg = _short_exc(exc)
         step(
             "Client",
             "Client",
             "Verify provider credential — W3C VC (JWT)",
-            f"REJECTED: {exc}",
+            f"REJECTED: {msg}",
             status="fail",
             layer=PAPER,
             tier="Tier 2 · AgentFacts",
         )
         return _finish(
-            steps, f"Provider credential failed verification — fail closed ({exc})", scenario, w
+            steps, f"Provider credential failed verification — fail closed ({msg})", scenario, w
         )
 
     # --- Hop 5: auditor VC + threshold -----------------------------------------
@@ -354,7 +364,13 @@ def walk(scenario: str) -> dict:
         tier="Tier 3 · Endpoint",
     )
 
-    return _finish(steps, "Resolution complete — every hop verified", scenario, w)
+    contested = any(s["status"] == "warn" for s in steps)
+    summary = (
+        "Resolution complete — verified · with a standing contestation"
+        if contested
+        else "Resolution complete — every hop verified"
+    )
+    return _finish(steps, summary, scenario, w)
 
 
 def _finish(steps, summary, scenario, w):

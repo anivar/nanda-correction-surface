@@ -1,4 +1,5 @@
 """Tests for the protocol explorer trace engine and app (in-process, no services)."""
+
 from fastapi.testclient import TestClient
 
 from explorer.app import app

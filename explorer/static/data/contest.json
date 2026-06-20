@@ -1,7 +1,7 @@
 {
   "scenario": "contest",
   "title": "Contest \u2014 an affected party's signed counter-claim is surfaced",
-  "summary": "Resolution complete \u2014 every hop verified",
+  "summary": "Resolution complete \u2014 verified \u00b7 with a standing contestation",
   "refused": false,
   "steps": [
     {
@@ -15,7 +15,7 @@
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6Mkvy46nN\u2026",
+        "agent_did": "did:key:z6MkuUeepn\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -62,7 +62,7 @@
       "from": "Client",
       "to": "Client",
       "title": "Verify provider credential \u2014 W3C VC (JWT)",
-      "detail": "issuer did:key:z6MkjpQ2Zc\u2026 \u00b7 trusted \u00b7 bound to agent_did",
+      "detail": "issuer did:key:z6Mkk7szjf\u2026 \u00b7 trusted \u00b7 bound to agent_did",
       "status": "ok",
       "layer": "paper",
       "tier": "Tier 2 \u00b7 AgentFacts",
@@ -83,7 +83,7 @@
     },
     {
       "n": 7,
-      "from": "did:key:z6MkpMzWch\u2026",
+      "from": "did:key:z6MksvWU1K\u2026",
       "to": "Client",
       "title": "Surface contestation \u2014 affected-party counter-claim",
       "detail": "[accuracy-dispute] \u201cReturned output dropped the dispute clause; accuracy SLA breached.\u201d \u00b7 standing verified",
@@ -91,7 +91,7 @@
       "layer": "extension",
       "tier": "Correction surface \u00b7 CONTEST",
       "data": {
-        "contestant": "did:key:z6MkpMzWch\u2026"
+        "contestant": "did:key:z6MksvWU1K\u2026"
       },
       "boundary": true
     },
@@ -121,9 +121,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6MksBRPXK\u2026",
-    "provider_issuer": "did:key:z6MkjpQ2Zc\u2026",
-    "auditor_issuer": "did:key:z6MkgM2Lp1\u2026",
-    "agent": "did:key:z6Mkvy46nN\u2026"
+    "resolver": "did:key:z6MkvbGq16\u2026",
+    "provider_issuer": "did:key:z6Mkk7szjf\u2026",
+    "auditor_issuer": "did:key:z6MkkmSp7a\u2026",
+    "agent": "did:key:z6MkuUeepn\u2026"
   }
 }

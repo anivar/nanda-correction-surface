@@ -15,7 +15,7 @@
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6Mkojax7o\u2026",
+        "agent_did": "did:key:z6MkoqmJmv\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -35,9 +35,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6MkqAnqRS\u2026",
-    "provider_issuer": "did:key:z6Mkk6qZhF\u2026",
-    "auditor_issuer": "did:key:z6MkfECQFT\u2026",
-    "agent": "did:key:z6Mkojax7o\u2026"
+    "resolver": "did:key:z6Mkgj4osJ\u2026",
+    "provider_issuer": "did:key:z6Mkfyk6pM\u2026",
+    "auditor_issuer": "did:key:z6MksStVg9\u2026",
+    "agent": "did:key:z6MkoqmJmv\u2026"
   }
 }

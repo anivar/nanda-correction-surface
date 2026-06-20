@@ -15,7 +15,7 @@
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6Mkt3fdWT\u2026",
+        "agent_did": "did:key:z6Mkg71QUo\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -62,7 +62,7 @@
       "from": "Client",
       "to": "Client",
       "title": "Verify provider credential \u2014 W3C VC (JWT)",
-      "detail": "issuer did:key:z6MkvEQ1J8\u2026 \u00b7 trusted \u00b7 bound to agent_did",
+      "detail": "issuer did:key:z6MkuwsdX4\u2026 \u00b7 trusted \u00b7 bound to agent_did",
       "status": "ok",
       "layer": "paper",
       "tier": "Tier 2 \u00b7 AgentFacts",
@@ -119,9 +119,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6Mkn3er8y\u2026",
-    "provider_issuer": "did:key:z6MkvEQ1J8\u2026",
-    "auditor_issuer": "did:key:z6MkqB4Nig\u2026",
-    "agent": "did:key:z6Mkt3fdWT\u2026"
+    "resolver": "did:key:z6Mkpkawp3\u2026",
+    "provider_issuer": "did:key:z6MkuwsdX4\u2026",
+    "auditor_issuer": "did:key:z6MkhJMjwT\u2026",
+    "agent": "did:key:z6Mkg71QUo\u2026"
   }
 }

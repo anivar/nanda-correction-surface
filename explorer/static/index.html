@@ -53,7 +53,7 @@
   .step.paper .card{border-left:3px solid var(--paper)}
   .step.extension .card{border-left:3px solid var(--ext)}
   .step.context .card{border-left:3px solid var(--ctx);background:var(--panel2)}
-  .step.institution .card{border-left:3px solid var(--inst);background:var(--panel2);border-style:dashed}
+  .step.institution .card{border-left:3px solid var(--inst);background:var(--panel2);border-left-style:dashed}
   .card .row1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .card .num{font-family:var(--mono);color:var(--dim);font-size:12px}
   .card .flow{font-family:var(--mono);font-size:12px;color:var(--dim)}
@@ -84,9 +84,9 @@
 
     <div class="group-label">Layers</div>
     <div class="panel">
-      <div class="lay"><span class="dot" style="background:var(--paper)"></span><span><span class="nm">NANDA paper</span><br><span class="ds">index · AgentAddr · AgentFacts (the substrate / TASK)</span></span></div>
+      <div class="lay"><span class="dot" style="background:var(--paper)"></span><span><span class="nm">NANDA paper</span><br><span class="ds">index · AgentAddr · AgentFacts (the substrate / CORE)</span></span></div>
       <div class="lay"><span class="dot" style="background:var(--ext)"></span><span><span class="nm">correction surface</span><br><span class="ds">contestation + self-sovereign exit (this work)</span></span></div>
-      <div class="lay"><span class="dot" style="background:var(--ctx)"></span><span><span class="nm">operator-side authz</span><br><span class="ds">AuthZEN · Transaction Tokens — cited, not run</span></span></div>
+      <div class="lay"><span class="dot" style="background:var(--ctx)"></span><span><span class="nm">operator-side authorisation</span><br><span class="ds">AuthZEN · Transaction Tokens — cited, not run</span></span></div>
       <div class="lay"><span class="dot" style="background:var(--inst)"></span><span><span class="nm">institution</span><br><span class="ds">compel-correction · remedy — out of scope</span></span></div>
     </div>
 
@@ -112,8 +112,25 @@
 const esc = s => String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
 // Static-first (relative paths → works on GitHub Pages / any subpath), live API fallback.
-async function fetchScenarios(){try{return await getJSON("data/scenarios.json");}catch(e){return await getJSON("api/scenarios");}}
-async function fetchWalk(scn){const q=encodeURIComponent(scn);try{return await getJSON("data/"+q+".json");}catch(e){return await getJSON("api/walk?scenario="+q);}}
+async function fetchScenarios(){
+  try{return await getJSON("data/scenarios.json");}catch(e1){
+    try{return await getJSON("api/scenarios");}catch(e2){
+      document.getElementById("summary").textContent=
+        "Could not load scenario data — open via a static host or run the explorer backend.";
+      throw e2;
+    }
+  }
+}
+async function fetchWalk(scn){
+  const q=encodeURIComponent(scn);
+  try{return await getJSON("data/"+q+".json");}catch(e1){
+    try{return await getJSON("api/walk?scenario="+q);}catch(e2){
+      document.getElementById("summary").textContent=
+        "Could not load scenario data — open via a static host or run the explorer backend.";
+      throw e2;
+    }
+  }
+}
 
 function renderSummary(d){
   const el=document.getElementById("summary");

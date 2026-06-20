@@ -1,7 +1,7 @@
 {
   "scenario": "spoof",
   "title": "Spoof \u2014 a forged credential is rejected",
-  "summary": "Provider credential failed verification \u2014 fail closed (issuer not in trust policy: did:key:z6MkfLYPBtuUxvS4wpnVokh9xf8pHxv6XJXmKXAwjqJMMp9o)",
+  "summary": "Provider credential failed verification \u2014 fail closed (issuer not in trust policy: did:key:z6MkguCQMZ\u2026)",
   "refused": true,
   "steps": [
     {
@@ -15,7 +15,7 @@
       "tier": "Tier 1 \u00b7 Lean Index",
       "data": {
         "agent_id": "nanda:translator-001",
-        "agent_did": "did:key:z6MkjQdPCL\u2026",
+        "agent_did": "did:key:z6MkmEf2BY\u2026",
         "registration_type": "did",
         "ttl": 3600
       },
@@ -62,7 +62,7 @@
       "from": "Client",
       "to": "Client",
       "title": "Verify provider credential \u2014 W3C VC (JWT)",
-      "detail": "REJECTED: issuer not in trust policy: did:key:z6MkfLYPBtuUxvS4wpnVokh9xf8pHxv6XJXmKXAwjqJMMp9o",
+      "detail": "REJECTED: issuer not in trust policy: did:key:z6MkguCQMZ\u2026",
       "status": "fail",
       "layer": "paper",
       "tier": "Tier 2 \u00b7 AgentFacts",
@@ -71,9 +71,9 @@
     }
   ],
   "identities": {
-    "resolver": "did:key:z6Mknn2B43\u2026",
-    "provider_issuer": "did:key:z6MkoLxL4j\u2026",
-    "auditor_issuer": "did:key:z6Mkm7SrCN\u2026",
-    "agent": "did:key:z6MkjQdPCL\u2026"
+    "resolver": "did:key:z6MkfxfsTN\u2026",
+    "provider_issuer": "did:key:z6Mkg8t7x5\u2026",
+    "auditor_issuer": "did:key:z6MkmF5quS\u2026",
+    "agent": "did:key:z6MkmEf2BY\u2026"
   }
 }
