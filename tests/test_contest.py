@@ -1,4 +1,4 @@
-"""Tests for the Level-2 contestation primitive: signing and standing."""
+"""Tests for the correction-surface contestation primitive: signing and standing."""
 
 from nanda_core import contest
 from nanda_core.keystore import Identity
