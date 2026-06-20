@@ -135,7 +135,7 @@ standing, and an adaptive resolver.
 
 ## How AI tooling was used
 
-Built with Claude Code as the primary tool. I used it to (a) read and verify the
+Built with an AI coding assistant as the primary tool. I used it to (a) read and verify the
 paper and current standards against primary sources (W3C VC 2.0, RFC 8785/8032,
 did:key, the OpenID AuthZEN/AARP/COAZ announcement) before writing code, (b)
 scaffold and implement the services and tests, and (c) keep the commit history

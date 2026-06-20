@@ -88,10 +88,11 @@ identity/discovery, and it is moving fast:
 - The **OpenID AuthZEN Authorization API** reached **Final Specification on
   12 January 2026** (Implementer's Draft 01 was November 2024). It standardises
   the PEP→PDP access-evaluation call over a Subject–Action–Resource–Context model.
-- On **15 June 2026 at Identiverse**, the AuthZEN WG approved two Working Group
-  Drafts: **AARP** (AuthZEN Access Request and Approval Profile — async approval
-  of prerequisites) and **COAZ** (AuthZEN Profile for Model Context Protocol Tool
-  Authorization — mapping MCP tool calls to the AuthZEN model).
+- On **15 June 2026**, the AuthZEN WG approved two Working Group Drafts: **AARP**
+  (AuthZEN Access Request and Approval Profile — reframing a denial into "what is
+  required before policy can authorise this", i.e. approvable-with-prerequisites)
+  and **COAZ** (AuthZEN Profile for Model Context Protocol Tool Authorization —
+  mapping MCP tool calls to the AuthZEN model).
   Source: <https://openid.net/openid-foundation-advances-authorization-for-the-agent-era-with-new-authzen-working-group-drafts/>
 
 These define how an *operator/approver* gates an action. They still do not give
