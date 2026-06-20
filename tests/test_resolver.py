@@ -9,7 +9,7 @@ import pytest
 
 from client.resolver import NandaClient, VerificationFailure
 from issuer import issue_auditor_credential, issue_provider_credential
-from nanda_core import severance, vc
+from nanda_core import crypto, severance, vc
 from nanda_core.keystore import Identity
 from nanda_core.models import (
     AgentAddr,
@@ -159,11 +159,40 @@ def test_invalid_severance_is_ignored():
     assert r.provider_credential["credentialSubject"]["id"] == AGENT.did
 
 
+def test_missing_agent_did_fails_closed():
+    # An AgentAddr with no agent_did cannot bind the VC subject or the exit gate,
+    # so the client must refuse it rather than silently skip those checks.
+    addr = sign_agentaddr(
+        AgentAddr(
+            agent_id="nanda:x",
+            agent_name="urn:agent:acme:t",
+            primary_facts_url="http://primary:8000/facts/nanda:x",
+        ),
+        RESOLVER,
+    )
+    with _client(_policy(), addr, _bundle()) as c:
+        with pytest.raises(VerificationFailure, match="agent_did"):
+            c.resolve("urn:agent:acme:t", act=False)
+
+
+def test_severance_for_other_entry_is_ignored():
+    # A severance validly signed by this key, but for a DIFFERENT registry entry,
+    # must not retire this one — the agent_id binding stops the cross-entry replay.
+    bundle = _bundle()
+    bundle["severance"] = severance.sign_severance(AGENT, "nanda:other", successor_did=OTHER.did)
+    with _client(_policy(), _addr(), bundle) as c:
+        r = c.resolve("urn:agent:acme:t", act=False)
+    assert r.provider_credential["credentialSubject"]["id"] == AGENT.did
+
+
 def test_enterprise_routed_follows_registry():
     addr = sign_agentaddr(
         AgentAddr(
-            agent_id="nanda:x", agent_name="urn:agent:globex:a", agent_did=AGENT.did,
-            registration_type="enterprise", primary_facts_url="http://primary/facts/nanda:x",
+            agent_id="nanda:x",
+            agent_name="urn:agent:globex:a",
+            agent_did=AGENT.did,
+            registration_type="enterprise",
+            primary_facts_url="http://primary/facts/nanda:x",
             enterprise_registry_url="http://primary/registry/nanda:x",
         ),
         RESOLVER,
@@ -187,13 +216,17 @@ def test_enterprise_routed_follows_registry():
 def test_live_revocation_list_fails_closed():
     bundle = _bundle()
     cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers={PROVIDER.did})
+    cid = cred["id"]
+    sig = crypto.b64u_encode(PROVIDER.sign(cid.encode()))  # issuer signs its own credential id
     c = NandaClient(
         _policy(), "http://index", revocation_url="http://index/revocations", verbose=False
     )
 
     def fake_get(url, *, params=None, what="resource"):
         if "/revocations" in url:
-            return {"revoked": [cred["id"]]}
+            return {
+                "revoked": [{"credential_id": cid, "issuer_did": PROVIDER.did, "signature": sig}]
+            }
         if "/resolve" in url:
             return _addr()
         return bundle
@@ -202,3 +235,26 @@ def test_live_revocation_list_fails_closed():
     with c:
         with pytest.raises(VerificationFailure, match="revoked"):
             c.resolve("urn:agent:acme:t", act=False)
+
+
+def test_revocation_by_untrusted_issuer_is_ignored():
+    # A revocation signed by a NON-trusted issuer (or for the wrong issuer) is ignored.
+    bundle = _bundle()
+    cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers={PROVIDER.did})
+    cid = cred["id"]
+    sig = crypto.b64u_encode(OTHER.sign(cid.encode()))  # OTHER is not a trusted issuer
+    c = NandaClient(
+        _policy(), "http://index", revocation_url="http://index/revocations", verbose=False
+    )
+
+    def fake_get(url, *, params=None, what="resource"):
+        if "/revocations" in url:
+            return {"revoked": [{"credential_id": cid, "issuer_did": OTHER.did, "signature": sig}]}
+        if "/resolve" in url:
+            return _addr()
+        return bundle
+
+    c._get_json = fake_get
+    with c:
+        r = c.resolve("urn:agent:acme:t", act=False)  # not revoked -> resolves
+    assert r.provider_credential["credentialSubject"]["id"] == AGENT.did

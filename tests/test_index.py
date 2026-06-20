@@ -13,11 +13,25 @@ def _register(name="urn:agent:acme:translator"):
         "/register",
         json={
             "agent_name": name,
+            "agent_did": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
             "primary_facts_url": "http://facts-primary:8000/facts/x",
             "private_facts_url": "http://facts-neutral:8000/facts/x",
             "ttl": 3600,
         },
     )
+
+
+def test_register_requires_agent_did():
+    """agent_did is mandatory: every signed AgentAddr must bind an identity."""
+    r = client.post(
+        "/register",
+        json={
+            "agent_name": "urn:agent:acme:no-did",
+            "primary_facts_url": "http://facts-primary:8000/facts/x",
+            "ttl": 3600,
+        },
+    )
+    assert r.status_code == 422
 
 
 def test_register_then_resolve_is_signed_by_resolver():

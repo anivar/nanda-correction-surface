@@ -1,7 +1,7 @@
 """The NANDA client — resolve an AgentName, verifying and printing every hop.
 
-This is the component the brief centres on: "a client should be able to resolve
-an agent name and receive something it can verify and act on." It walks
+This is the heart of the prototype: a client resolves an agent name and receives
+something it can verify and act on. It walks
 
     AgentName → Index → AgentAddr → AgentFacts → endpoint
 
@@ -63,7 +63,7 @@ class NandaClient:
         self.revocation_url = revocation_url  # live VC-Status-List stub, refreshed per resolve
         self.verbose = verbose
         self._http = httpx.Client(timeout=timeout)
-        self._revoked_live: set[str] = set()
+        self._revoked_live: dict[str, str] = {}  # credential/status id -> revoking issuer did
 
     def close(self) -> None:
         self._http.close()
@@ -106,8 +106,11 @@ class NandaClient:
         bundle = self._get_json(facts_url, what="AgentFacts bundle")
 
         # Exit gate — refuse immediately if the subject has SEVERED this identity.
-        # Checked against the index-bound (signed) agent_did, before trusting facts.
-        self._check_severance(bundle, signed_addr.get("agent_did"))
+        # Checked against the index-bound (signed) agent_did + agent_id, before
+        # trusting facts, so a severance cannot be replayed onto another entry.
+        self._check_severance(
+            bundle, signed_addr.get("agent_did"), signed_addr.get("agent_id")
+        )
 
         # Hop 4 — verify the provider credential (required)
         self._say(C.hop(4, "Verify provider credential (W3C VC)"))
@@ -115,8 +118,10 @@ class NandaClient:
         subject = provider_cred["credentialSubject"]
         # Bind the verified VC subject to the signed index record: an untrusted host
         # must not be able to serve a different agent's (validly-issued) VC here.
-        expected_did = signed_addr.get("agent_did")
-        if expected_did and subject.get("id") != expected_did:
+        # agent_did is guaranteed present (enforced in verify_agentaddr), so this is
+        # an equality check that always runs — never silently skipped.
+        expected_did = signed_addr["agent_did"]
+        if subject.get("id") != expected_did:
             self._say(
                 C.fail(
                     f"provider VC subject {subject.get('id')} ≠ AgentAddr agent_did {expected_did}"
@@ -153,7 +158,7 @@ class NandaClient:
             self._say(C.warn("no auditor credential present (corroboration only)"))
         self._enforce_threshold(verified_issuers)
 
-        # Hop 6 — surface contestations (Level 2; full verification added there)
+        # Hop 6 — surface contestations (the correction surface)
         self._say(C.hop(6, "Surface contestations (affected-party claims)"))
         contestations = self._surface_contestations(
             bundle, subject.get("id"), signed_addr.get("agent_id")
@@ -201,6 +206,13 @@ class NandaClient:
         if not crypto.verify_record(signed, pub):
             self._say(C.fail("AgentAddr signature INVALID — record was tampered with"))
             raise VerificationFailure("AgentAddr signature invalid")
+        # The signed pointer MUST carry the agent's did:key. It is the anchor that
+        # binds the VC subject and the severance/exit gate to this exact identity;
+        # without it those checks would have nothing to bind to, so fail closed
+        # rather than resolve an unbindable record.
+        if not signed.get("agent_did"):
+            self._say(C.fail("AgentAddr has no agent_did — identity cannot be bound"))
+            raise VerificationFailure("AgentAddr missing agent_did — cannot bind identity")
         self._say(C.ok("AgentAddr signature valid, signed by the pinned index resolver"))
         self._check_freshness(signed)
 
@@ -225,9 +237,27 @@ class NandaClient:
             return
         try:
             data = self._get_json(self.revocation_url, what="revocation list")
-            self._revoked_live = set(data.get("revoked", []))
         except VerificationFailure:
-            self._revoked_live = set()  # status unavailable -> rely on the static policy
+            # Fail closed: a transient outage (or a DoS on the status endpoint) must
+            # NOT silently widen the trust surface by dropping known revocations, so
+            # we retain the last good set rather than clearing it.
+            self._say(C.warn("revocation list unavailable — retaining last known revocations"))
+            return
+        live: dict[str, str] = {}
+        for r in data.get("revoked", []):
+            cid, issuer, sig = r.get("credential_id"), r.get("issuer_did"), r.get("signature")
+            # Only honour revocations signed by an issuer we trust (and, at use, by the
+            # credential's OWN issuer — checked in _verify_credential).
+            if not cid or issuer not in self.policy.trusted_issuers:
+                continue
+            try:
+                if crypto.verify_bytes(
+                    decode_did_key(issuer), crypto.b64u_decode(sig), cid.encode()
+                ):
+                    live[cid] = issuer
+            except (ValueError, TypeError):
+                continue
+        self._revoked_live = live
 
     def _resolve_facts_url(self, signed: dict, path: str) -> tuple[str, str]:
         # Enterprise-routed entries take one extra hop through a registry.
@@ -244,13 +274,21 @@ class NandaClient:
             return url, "enterprise"
         return self._select_facts_url(signed, path)
 
-    def _check_severance(self, bundle: dict, agent_did: str | None) -> None:
+    def _check_severance(
+        self, bundle: dict, agent_did: str | None, agent_id: str | None = None
+    ) -> None:
         """Exit gate: if the subject has severed this identity (signed by its own
-        key), prior authority is inexecutable — refuse, surfacing any successor."""
+        key), prior authority is inexecutable — refuse, surfacing any successor.
+
+        Bound to BOTH the signed agent_did and agent_id, so a valid severance filed
+        against one registry entry cannot be replayed onto another that shares the
+        same key."""
         sev = bundle.get("severance")
         if not sev or not agent_did:
             return
-        if severance.verify_severance(sev, expected_agent_did=agent_did):
+        if severance.verify_severance(
+            sev, expected_agent_did=agent_did, expected_agent_id=agent_id
+        ):
             successor = sev.get("successor_did")
             self._say(C.fail("identity SEVERED by its own key — prior authority inexecutable"))
             if successor:
@@ -290,11 +328,12 @@ class NandaClient:
             raise VerificationFailure(f"{label} credential invalid: {exc}") from exc
         cred_id = cred.get("id")
         status_id = (cred.get("credentialStatus") or {}).get("id")
-        if (
-            self.policy.is_revoked(cred)
-            or cred_id in self._revoked_live
-            or status_id in self._revoked_live
-        ):
+        issuer = cred.get("issuer")
+        # A live revocation counts only if signed by the credential's OWN issuer.
+        live_revoked = (
+            self._revoked_live.get(cred_id) == issuer or self._revoked_live.get(status_id) == issuer
+        )
+        if self.policy.is_revoked(cred) or live_revoked:
             self._say(C.fail(f"{label} credential REVOKED ({cred_id})"))
             raise VerificationFailure(f"{label} credential revoked")
         self._say(C.ok(f"{label} VC verified — issuer {cred['issuer']} (host-independent)"))

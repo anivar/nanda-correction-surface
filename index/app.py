@@ -18,7 +18,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from nanda_core import config
+from nanda_core import config, crypto
+from nanda_core.didkey import decode_did_key
 from nanda_core.keystore import Identity, load_or_create_private_key
 from nanda_core.models import AgentAddr, sign_agentaddr
 
@@ -36,17 +37,19 @@ _by_name: dict[str, dict] = {}
 _by_id: dict[str, dict] = {}
 
 
-# Stubbed VC-Status-List: a set of revoked credential ids. Production would be an
-# issuer-hosted W3C Bitstring Status List; here the index serves a simple set the
-# client refreshes at resolve time.
-_revoked: set[str] = set()
+# Stubbed VC-Status-List. Production would be an issuer-hosted W3C Bitstring Status
+# List; here the index serves issuer-signed revocations the client refreshes at
+# resolve time. Least authority: only a credential's OWN issuer can revoke it —
+# every entry carries the issuer's signature over the credential id, and the client
+# both verifies that signature and matches it to the credential's issuer.
+_revocations: dict[str, dict] = {}  # credential_id -> {credential_id, issuer_did, signature}
 
 
 class RegisterRequest(BaseModel):
     agent_name: str
     primary_facts_url: str
+    agent_did: str  # the agent's did:key — required, so every AgentAddr binds an identity
     agent_id: str | None = None
-    agent_did: str | None = None
     registration_type: str = "native"  # native | enterprise | did (quilt entry type)
     enterprise_registry_url: str | None = None
     private_facts_url: str | None = None
@@ -56,6 +59,8 @@ class RegisterRequest(BaseModel):
 
 class RevokeRequest(BaseModel):
     credential_id: str
+    issuer_did: str  # the issuer revoking ITS OWN credential
+    signature: str  # Ed25519 over credential_id, by issuer_did (base64url)
 
 
 @app.get("/healthz")
@@ -137,13 +142,22 @@ def list_agents():
 
 @app.post("/revoke")
 def revoke(req: RevokeRequest):
-    """Mark a credential id revoked (stubbed VC-Status-List). Issuer-authorised in
-    production; open here for the demo."""
-    _revoked.add(req.credential_id)
-    return {"ok": True, "revoked_count": len(_revoked)}
+    """Record an issuer-authorised revocation. The caller must prove control of
+    issuer_did by signing the credential_id with it — so no one can revoke a
+    credential they did not issue."""
+    try:
+        pub = decode_did_key(req.issuer_did)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"bad issuer did:key: {exc}") from exc
+    if not crypto.verify_bytes(pub, crypto.b64u_decode(req.signature), req.credential_id.encode()):
+        raise HTTPException(status_code=403, detail="revocation signature invalid for issuer_did")
+    _revocations[req.credential_id] = req.model_dump()
+    return {"ok": True, "revoked_count": len(_revocations)}
 
 
 @app.get("/revocations")
 def revocations():
-    """The current revocation set, refreshed by clients at resolve time."""
-    return {"revoked": sorted(_revoked)}
+    """The current issuer-signed revocations, refreshed by clients at resolve time.
+    Each entry is independently verifiable; the client honours only revocations
+    signed by the credential's own (trusted) issuer."""
+    return {"revoked": list(_revocations.values())}

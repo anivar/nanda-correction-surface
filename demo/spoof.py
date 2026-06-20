@@ -41,6 +41,7 @@ def _register_rogue(name: str, provider_vc: str, agent_did: str, label: str) -> 
         {
             "agent_id": agent_id,
             "agent_name": name,
+            "agent_did": agent_did,
             "primary_facts_url": primary,
             "ttl": 3600,
         },

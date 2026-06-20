@@ -10,7 +10,7 @@ just canonicalise and check.
 
 We deliberately use a *different* mechanism for the richer AgentFacts tier
 (full W3C Verifiable Credentials as JWTs — see vc.py). Matching the verification
-mechanism to each tier's volatility is the design judgement the brief asks for.
+mechanism to each tier's volatility is a deliberate design judgement.
 """
 
 from __future__ import annotations
@@ -73,12 +73,16 @@ def sign_bytes(priv: Ed25519PrivateKey, data: bytes) -> bytes:
 
 
 def verify_bytes(pub: Ed25519PublicKey, sig: bytes, data: bytes) -> bool:
+    # Fail closed by contract: return True ONLY for a genuine, valid signature;
+    # any other input — wrong type, malformed sig, mismatch — returns False.
+    if not isinstance(pub, Ed25519PublicKey):
+        return False
     try:
         pub.verify(sig, data)
         return True
-    except InvalidSignature, ValueError, TypeError:
-        # InvalidSignature: genuine mismatch. ValueError: wrong signature length
-        # (e.g. a valid-base64 but malformed sig). TypeError: non-bytes input.
+    except (InvalidSignature, ValueError, TypeError):
+        # InvalidSignature: mismatch or malformed/wrong-length signature.
+        # ValueError/TypeError: non-bytes or otherwise unusable inputs.
         # All are verification failures — fail closed, never propagate.
         return False
 
