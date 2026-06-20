@@ -43,3 +43,18 @@ def test_tampered_severance_rejected():
 def test_no_severance_is_not_severed():
     agent = Identity.generate("agent")
     assert severance.verify_severance(None, expected_agent_did=agent.did) is False
+
+
+def test_severance_bound_to_agent_id_cannot_be_replayed():
+    # A severance filed for one registry entry must not retire another entry that
+    # merely shares the same key. The agent_id binding is what stops the replay.
+    agent = Identity.generate("agent")
+    sev = severance.sign_severance(agent, "nanda:1")
+    assert (
+        severance.verify_severance(sev, expected_agent_did=agent.did, expected_agent_id="nanda:1")
+        is True
+    )
+    assert (
+        severance.verify_severance(sev, expected_agent_did=agent.did, expected_agent_id="nanda:2")
+        is False
+    )

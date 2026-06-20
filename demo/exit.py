@@ -59,7 +59,7 @@ def main() -> None:
     # 2. Key rotation: a successor identity v2 registers under a new name.
     v2 = Identity.generate("exitable v2")
     id2, name2 = X.new_agent_id(), "urn:agent:acme:exitable-v2"
-    _register(v2, id2, name2)
+    _register(v2, id2, name2, provider, auditor)
     print(C.ok(f"successor identity registered — agent_did {v2.did}"))
 
     # 3. v1 severs ITSELF, signed by its own key, naming v2 as successor.

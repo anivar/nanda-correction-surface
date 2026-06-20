@@ -45,3 +45,29 @@ def test_contestation_dedup_by_id():
     assert r2.json().get("duplicate") is True
     got = client.get(f"/facts/{AGENT_ID}").json()
     assert sum(1 for x in got["contestations"] if x.get("contestation_id") == "dup1") == 1
+
+
+def test_severance_is_permanent_first_write_wins():
+    # Exit is irrevocable at the host: once a severance is filed, a later POST (e.g.
+    # a third party forging one to evict the real exit) must NOT overwrite it.
+    aid = "nanda:sev-permanent"
+    client.put(f"/facts/{aid}", json={**BUNDLE, "agent_id": aid})
+    first = {"agent_did": "did:key:z6MkAgent", "proof": {"sig": "first"}}
+    forged = {"agent_did": "did:key:z6MkAttacker", "proof": {"sig": "second"}}
+    assert client.post(f"/facts/{aid}/severance", json=first).status_code == 200
+    r2 = client.post(f"/facts/{aid}/severance", json=forged)
+    assert r2.json().get("duplicate") is True
+    got = client.get(f"/facts/{aid}").json()
+    assert got["severance"] == first  # the original exit survives the overwrite attempt
+
+
+def test_severance_preserved_across_reput():
+    # Re-hosting the bundle (PUT) must not erase a filed severance — otherwise the
+    # contested party could un-sever simply by re-PUTting.
+    aid = "nanda:sev-reput"
+    client.put(f"/facts/{aid}", json={**BUNDLE, "agent_id": aid})
+    sev = {"agent_did": "did:key:z6MkAgent", "proof": {"sig": "abc"}}
+    client.post(f"/facts/{aid}/severance", json=sev)
+    client.put(f"/facts/{aid}", json={**BUNDLE, "agent_id": aid})  # re-PUT carries no severance
+    got = client.get(f"/facts/{aid}").json()
+    assert got["severance"] == sev

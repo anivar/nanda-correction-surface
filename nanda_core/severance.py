@@ -40,13 +40,24 @@ def sign_severance(
     )
 
 
-def verify_severance(severance: dict | None, *, expected_agent_did: str) -> bool:
+def verify_severance(
+    severance: dict | None,
+    *,
+    expected_agent_did: str,
+    expected_agent_id: str | None = None,
+) -> bool:
     """Valid iff the severance is signed by the very identity it retires. Only the
     holder of `agent_did` can sever `agent_did` — exit is self-sovereign, and no one
-    else (issuer, registry, host) can forge it."""
+    else (issuer, registry, host) can forge it.
+
+    When `expected_agent_id` (the resolved registry handle) is supplied it must also
+    match the signed `agent_id`, so a severance filed against one registry entry
+    cannot be replayed onto another that merely shares the same key."""
     if not severance:
         return False
     if severance.get("agent_did") != expected_agent_did:
+        return False
+    if expected_agent_id is not None and severance.get("agent_id") != expected_agent_id:
         return False
     signer = str((severance.get("proof") or {}).get("verificationMethod", "")).split("#", 1)[0]
     if signer != expected_agent_did:

@@ -6,7 +6,7 @@ is precisely why the same code runs as both the provider's primary host and the
 neutral privacy host — neutrality is an operational property (who runs it, and
 that the agent's own domain never sees the request), not a software difference.
 
-It also accepts contestations (the Level 2 return channel): signed counter-claims
+It also accepts contestations (the correction-surface return channel): signed counter-claims
 appended alongside the issuer credentials.
 """
 
@@ -79,7 +79,7 @@ def get_facts(agent_id: str):
 
 @app.post("/facts/{agent_id}/contestations")
 def add_contestation(agent_id: str, contestation: dict):
-    """Append a signed contestation (Level 2). Stored verbatim; the client, not
+    """Append a signed contestation. Stored verbatim; the client, not
     the host, verifies it. The host does not adjudicate."""
     bundle = _store.get(agent_id)
     if bundle is None:
@@ -106,10 +106,20 @@ def add_contestation(agent_id: str, contestation: dict):
 @app.post("/facts/{agent_id}/severance")
 def set_severance(agent_id: str, severance: dict):
     """Record a self-sovereign severance (the agent has exited this identity).
-    Stored verbatim; the client verifies it was signed by the retiring identity."""
+    Stored verbatim; the client verifies it was signed by the retiring identity.
+
+    A severance, once filed, is PERMANENT and first-write-wins. The host signs
+    nothing and cannot adjudicate authenticity, so it must not let a later POST
+    overwrite an existing severance — otherwise any third party who knows the
+    agent_id could evict a valid, agent-signed exit by replacing it with a forged
+    one, and the client (which rejects the forgery) would resolve as if the agent
+    had never exited. This mirrors the permanence already enforced in put_facts."""
     bundle = _store.get(agent_id)
     if bundle is None:
         raise HTTPException(status_code=404, detail=f"no AgentFacts hosted for {agent_id!r}")
+    if bundle.get("severance"):
+        # Idempotent: already severed. Never overwrite.
+        return {"ok": True, "agent_id": agent_id, "severed": True, "duplicate": True}
     bundle["severance"] = severance
     return {"ok": True, "agent_id": agent_id, "severed": True}
 
