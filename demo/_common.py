@@ -12,8 +12,18 @@ import uuid
 
 import httpx
 
+from issuer import issue_auditor_credential, issue_provider_credential
 from nanda_core import config
-from nanda_core.keystore import read_json, write_json
+from nanda_core.keystore import Identity, read_json, write_json
+from nanda_core.models import (
+    AgentFactsSubject,
+    Capabilities,
+    Endpoints,
+    Evaluations,
+    FactsBundle,
+    Provider,
+    Skill,
+)
 
 # --- the two demonstration agents ---------------------------------------------
 
@@ -108,3 +118,64 @@ def load_state() -> dict:
 
 def new_agent_id() -> str:
     return f"nanda:{uuid.uuid4()}"
+
+
+# --- helpers shared by the Level-2 extension demos ----------------------------
+
+
+def load_issuers() -> tuple[Identity, Identity]:
+    """Reconstruct the SAME provider + auditor issuers register.py used, so VCs the
+    extension demos issue are trusted by the already-pinned client trust policy."""
+    s = load_state()
+    return (
+        Identity.from_secret_dict(s["issuer_secrets"]["provider"]),
+        Identity.from_secret_dict(s["issuer_secrets"]["auditor"]),
+    )
+
+
+def build_bundle(
+    agent: Identity,
+    *,
+    agent_id: str,
+    agent_name: str,
+    label: str,
+    slug: str,
+    provider: Identity,
+    auditor: Identity,
+) -> dict:
+    """Build an AgentFacts bundle (provider VC + auditor VC) for an agent."""
+    subject = AgentFactsSubject(
+        id=agent.did,
+        agent_name=agent_name,
+        label=label,
+        description=f"{label} agent",
+        provider=Provider(name="ACME Corp", url="https://acme.example", did=provider.did),
+        endpoints=Endpoints(static=[f"{config.AGENT_URL}/agents/{slug}/invoke"]),
+        capabilities=Capabilities(modalities=["text"]),
+        skills=[Skill(id=slug, description=label, inputModes=["text"], outputModes=["text"])],
+        evaluations=Evaluations(performanceScore=4.6, availability90d="99.0%"),
+    )
+    provider_vc = issue_provider_credential(provider, subject)
+    auditor_vc = issue_auditor_credential(
+        auditor,
+        agent.did,
+        Evaluations(performanceScore=4.6),
+        {"level": "verified", "issuer": "ACME Independent Audits"},
+    )
+    return FactsBundle(
+        agent_id=agent_id,
+        agent_did=agent.did,
+        agent_name=agent_name,
+        label=label,
+        provider_vc=provider_vc,
+        auditor_vc=auditor_vc,
+    ).model_dump()
+
+
+def host_bundle(agent_id: str, bundle: dict) -> tuple[str, str]:
+    """Host the bundle on both facts hosts; return (primary_url, private_url)."""
+    primary = f"{config.FACTS_PRIMARY_URL}/facts/{agent_id}"
+    private = f"{config.FACTS_NEUTRAL_URL}/facts/{agent_id}"
+    put_json(primary, bundle)
+    put_json(private, bundle)
+    return primary, private

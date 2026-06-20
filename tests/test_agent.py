@@ -1,4 +1,5 @@
 """Tests for the Tier-3 agent runtime the client acts on after verification."""
+
 from fastapi.testclient import TestClient
 
 from agent.app import app

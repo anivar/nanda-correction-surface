@@ -142,6 +142,12 @@ def main() -> dict:
     state = {
         "agents": agents_state,
         "issuers": {"provider": provider.did, "auditor": auditor.did},
+        # Issuer secrets persisted (shared/ only) so the Level-2 extension demos can
+        # issue VCs from the SAME trusted issuers the trust policy already pins.
+        "issuer_secrets": {
+            "provider": provider.to_secret_dict(),
+            "auditor": auditor.to_secret_dict(),
+        },
     }
     X.save_state(state)
     print(C.ok(f"demo state written → {config.DEMO_STATE_PATH}\n"))

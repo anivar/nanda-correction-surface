@@ -4,11 +4,12 @@ The HTTP hops are stubbed so the test exercises the resolver's verification
 orchestration directly: signature pinning, the agent_did binding, issuer trust +
 threshold, the auditor/provider subject match, revocation, and fail-closed.
 """
+
 import pytest
 
 from client.resolver import NandaClient, VerificationFailure
 from issuer import issue_auditor_credential, issue_provider_credential
-from nanda_core import vc
+from nanda_core import severance, vc
 from nanda_core.keystore import Identity
 from nanda_core.models import (
     AgentAddr,
@@ -38,19 +39,27 @@ def _bundle(*, provider_subject=None, auditor_subject=None, with_auditor=True) -
     auditor_vc = None
     if with_auditor:
         auditor_vc = issue_auditor_credential(
-            AUDITOR, auditor_subject or AGENT.did,
-            Evaluations(performanceScore=4.5), {"level": "verified"},
+            AUDITOR,
+            auditor_subject or AGENT.did,
+            Evaluations(performanceScore=4.5),
+            {"level": "verified"},
         )
     return FactsBundle(
-        agent_id="nanda:x", agent_did=AGENT.did, agent_name="urn:agent:acme:t",
-        label="T", provider_vc=provider_vc, auditor_vc=auditor_vc,
+        agent_id="nanda:x",
+        agent_did=AGENT.did,
+        agent_name="urn:agent:acme:t",
+        label="T",
+        provider_vc=provider_vc,
+        auditor_vc=auditor_vc,
     ).model_dump()
 
 
 def _addr() -> dict:
     return sign_agentaddr(
         AgentAddr(
-            agent_id="nanda:x", agent_name="urn:agent:acme:t", agent_did=AGENT.did,
+            agent_id="nanda:x",
+            agent_name="urn:agent:acme:t",
+            agent_did=AGENT.did,
             primary_facts_url="http://primary:8000/facts/nanda:x",
             private_facts_url="http://neutral:8000/facts/nanda:x",
         ),
@@ -128,5 +137,68 @@ def test_revoked_credential_fails_closed():
     bundle = _bundle()
     cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers={PROVIDER.did})
     with _client(_policy(revoked={cred["id"]}), _addr(), bundle) as c:
+        with pytest.raises(VerificationFailure, match="revoked"):
+            c.resolve("urn:agent:acme:t", act=False)
+
+
+def test_severed_identity_fails_closed():
+    # The subject has exited (severance signed by its own key) -> refuse, name successor.
+    bundle = _bundle()
+    bundle["severance"] = severance.sign_severance(AGENT, "nanda:x", successor_did=OTHER.did)
+    with _client(_policy(), _addr(), bundle) as c:
+        with pytest.raises(VerificationFailure, match="severed"):
+            c.resolve("urn:agent:acme:t", act=False)
+
+
+def test_invalid_severance_is_ignored():
+    # A severance signed by some OTHER identity cannot retire this agent.
+    bundle = _bundle()
+    bundle["severance"] = severance.sign_severance(OTHER, "nanda:x")
+    with _client(_policy(), _addr(), bundle) as c:
+        r = c.resolve("urn:agent:acme:t", act=False)
+    assert r.provider_credential["credentialSubject"]["id"] == AGENT.did
+
+
+def test_enterprise_routed_follows_registry():
+    addr = sign_agentaddr(
+        AgentAddr(
+            agent_id="nanda:x", agent_name="urn:agent:globex:a", agent_did=AGENT.did,
+            registration_type="enterprise", primary_facts_url="http://primary/facts/nanda:x",
+            enterprise_registry_url="http://primary/registry/nanda:x",
+        ),
+        RESOLVER,
+    )
+    bundle = _bundle()
+    c = NandaClient(_policy(), "http://index", verbose=False)
+
+    def fake_get(url, *, params=None, what="resource"):
+        if "/resolve" in url:
+            return addr
+        if "/registry/" in url:
+            return {"facts_url": "http://primary/facts/nanda:x"}
+        return bundle
+
+    c._get_json = fake_get
+    with c:
+        r = c.resolve("urn:agent:globex:a", act=False)
+    assert r.facts_host_role == "enterprise"
+
+
+def test_live_revocation_list_fails_closed():
+    bundle = _bundle()
+    cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers={PROVIDER.did})
+    c = NandaClient(
+        _policy(), "http://index", revocation_url="http://index/revocations", verbose=False
+    )
+
+    def fake_get(url, *, params=None, what="resource"):
+        if "/revocations" in url:
+            return {"revoked": [cred["id"]]}
+        if "/resolve" in url:
+            return _addr()
+        return bundle
+
+    c._get_json = fake_get
+    with c:
         with pytest.raises(VerificationFailure, match="revoked"):
             c.resolve("urn:agent:acme:t", act=False)

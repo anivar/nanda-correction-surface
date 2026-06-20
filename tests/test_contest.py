@@ -100,8 +100,12 @@ def test_interaction_id_mismatch_rejected():
     receipt, _iid = contest.mint_interaction_receipt(agent, "nanda:1", party.did, "job")
     # Contestation references a different interaction than the receipt attests.
     c = contest.file_contestation(
-        party, agent_id="nanda:1", agent_did=agent.did, interaction_id="int:wrong",
-        statement="dispute", receipt=receipt,
+        party,
+        agent_id="nanda:1",
+        agent_did=agent.did,
+        interaction_id="int:wrong",
+        statement="dispute",
+        receipt=receipt,
     )
     v = contest.verify_contestation(c, expected_agent_did=agent.did)
     assert v.valid is False and "interaction_id" in v.reason
