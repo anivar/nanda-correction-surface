@@ -4,6 +4,7 @@ In docker-compose the services find each other by name (http://index:8000, …);
 run locally, everything is on localhost with distinct ports. Both modes set the
 same variable names, so nothing else in the code needs to know which it is.
 """
+
 from __future__ import annotations
 
 import os

@@ -1,11 +1,16 @@
 """Generate JSON Schema files from the pydantic models. Run: python -m schemas.export_schemas"""
+
 from __future__ import annotations
 
 import json
 import pathlib
 
 from nanda_core.models import (
-    AgentAddr, AgentFactsSubject, Contestation, FactsBundle, InteractionReceipt,
+    AgentAddr,
+    AgentFactsSubject,
+    Contestation,
+    FactsBundle,
+    InteractionReceipt,
 )
 
 OUT = pathlib.Path(__file__).resolve().parent

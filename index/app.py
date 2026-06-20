@@ -9,6 +9,7 @@ The index never stores or serves AgentFacts metadata — only the lean pointer
 record. That separation is the whole point of the architecture: the high-churn
 metadata lives at the facts hosts and can change without ever touching the index.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -25,8 +26,9 @@ app = FastAPI(title="NANDA Lean Index", version="0.1.0")
 
 # Stable resolver identity, persisted under shared/ so it survives restarts.
 config.ensure_shared_dir()
-_resolver = Identity(name="index-resolver",
-                     private_key=load_or_create_private_key(config.RESOLVER_KEY_PATH))
+_resolver = Identity(
+    name="index-resolver", private_key=load_or_create_private_key(config.RESOLVER_KEY_PATH)
+)
 
 # In-memory registry. A real index would be a replicated KV store; for the
 # prototype the running process is the store (register, then resolve, same run).

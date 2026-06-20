@@ -8,6 +8,7 @@ Persistence here is deliberately minimal — base64 seed files / JSON — becaus
 brief asks for a prototype, not a key-management product. Secrets live only under
 the gitignored `shared/` directory.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,7 +26,7 @@ class Identity:
     private_key: Ed25519PrivateKey
 
     @classmethod
-    def generate(cls, name: str) -> "Identity":
+    def generate(cls, name: str) -> Identity:
         return cls(name=name, private_key=crypto.generate_private_key())
 
     @property
@@ -50,7 +51,7 @@ class Identity:
         }
 
     @classmethod
-    def from_secret_dict(cls, d: dict) -> "Identity":
+    def from_secret_dict(cls, d: dict) -> Identity:
         return cls(name=d["name"], private_key=crypto.private_key_from_b64(d["private_key"]))
 
     def to_public_dict(self) -> dict:
@@ -62,7 +63,7 @@ def load_or_create_private_key(path: str) -> Ed25519PrivateKey:
     persisting a new one if absent. Used by the index for a stable resolver key
     across restarts."""
     if os.path.exists(path):
-        with open(path, "r", encoding="ascii") as fh:
+        with open(path, encoding="ascii") as fh:
             return crypto.private_key_from_b64(fh.read().strip())
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     priv = crypto.generate_private_key()
@@ -78,5 +79,5 @@ def write_json(path: str, obj: dict) -> None:
 
 
 def read_json(path: str) -> dict:
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         return json.load(fh)

@@ -15,16 +15,17 @@ Two resolution paths are supported (paper §V.D):
                 who resolved it (requester privacy)
 Both verify identically, because AgentFacts are signed by their issuers, not the host.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import httpx
 
 from nanda_core import contest, crypto, vc
 from nanda_core.didkey import decode_did_key
 from nanda_core.trust import TrustPolicy
+
 from . import console as C
 
 
@@ -40,15 +41,16 @@ class ResolveResult:
     facts_url: str
     facts_host_role: str
     provider_credential: dict
-    auditor_credential: Optional[dict] = None
+    auditor_credential: dict | None = None
     contestations: list = field(default_factory=list)
-    endpoint: Optional[str] = None
-    action_response: Optional[dict] = None
+    endpoint: str | None = None
+    action_response: dict | None = None
 
 
 class NandaClient:
-    def __init__(self, policy: TrustPolicy, index_url: str, *, verbose: bool = True,
-                 timeout: float = 10.0):
+    def __init__(
+        self, policy: TrustPolicy, index_url: str, *, verbose: bool = True, timeout: float = 10.0
+    ):
         self.policy = policy
         self.index_url = index_url.rstrip("/")
         self.verbose = verbose
@@ -65,8 +67,9 @@ class NandaClient:
 
         # Hop 1 — index lookup -> signed AgentAddr
         self._say(C.hop(1, "Index lookup → AgentAddr"))
-        signed_addr = self._get_json(f"{self.index_url}/resolve", params={"name": agent_name},
-                                     what="AgentAddr")
+        signed_addr = self._get_json(
+            f"{self.index_url}/resolve", params={"name": agent_name}, what="AgentAddr"
+        )
         self._say(C.info(f"agent_id           {signed_addr.get('agent_id')}"))
         self._say(C.info(f"primary_facts_url  {signed_addr.get('primary_facts_url')}"))
         self._say(C.info(f"private_facts_url  {signed_addr.get('private_facts_url')}"))
@@ -98,8 +101,12 @@ class NandaClient:
             auditor_cred = self._verify_credential(bundle.get("auditor_vc"), "auditor")
             verified_issuers.add(auditor_cred["issuer"])
             ev = auditor_cred["credentialSubject"].get("evaluations", {})
-            self._say(C.info(f"performanceScore {ev.get('performanceScore')}  "
-                             f"availability90d {ev.get('availability90d')}"))
+            self._say(
+                C.info(
+                    f"performanceScore {ev.get('performanceScore')}  "
+                    f"availability90d {ev.get('availability90d')}"
+                )
+            )
         else:
             self._say(C.warn("no auditor credential present (corroboration only)"))
         self._enforce_threshold(verified_issuers)
@@ -107,7 +114,8 @@ class NandaClient:
         # Hop 6 — surface contestations (Level 2; full verification added there)
         self._say(C.hop(6, "Surface contestations (affected-party claims)"))
         contestations = self._surface_contestations(
-            bundle, subject.get("id"), signed_addr.get("agent_id"))
+            bundle, subject.get("id"), signed_addr.get("agent_id")
+        )
 
         # Hop 7 — act on the verified endpoint
         endpoint, action = None, None
@@ -117,10 +125,16 @@ class NandaClient:
 
         self._say(C.ok(C.bold("resolution complete — every hop verified")) + "\n")
         return ResolveResult(
-            agent_name=agent_name, path=path, agent_addr=signed_addr, facts_url=facts_url,
-            facts_host_role=host_role, provider_credential=provider_cred,
-            auditor_credential=auditor_cred, contestations=contestations,
-            endpoint=endpoint, action_response=action,
+            agent_name=agent_name,
+            path=path,
+            agent_addr=signed_addr,
+            facts_url=facts_url,
+            facts_host_role=host_role,
+            provider_credential=provider_cred,
+            auditor_credential=auditor_cred,
+            contestations=contestations,
+            endpoint=endpoint,
+            action_response=action,
         )
 
     # --- hop helpers ----------------------------------------------------------
@@ -131,8 +145,12 @@ class NandaClient:
         signer_did = str(proof.get("verificationMethod", "")).split("#", 1)[0]
         # Pin: a valid signature is not enough — it must be the EXPECTED resolver.
         if signer_did != self.policy.resolver_did:
-            self._say(C.fail(f"AgentAddr signer {signer_did or '<none>'} "
-                             f"≠ pinned resolver {self.policy.resolver_did}"))
+            self._say(
+                C.fail(
+                    f"AgentAddr signer {signer_did or '<none>'} "
+                    f"≠ pinned resolver {self.policy.resolver_did}"
+                )
+            )
             raise VerificationFailure("AgentAddr not signed by the pinned resolver")
         try:
             pub = decode_did_key(signer_did)
@@ -149,7 +167,11 @@ class NandaClient:
             if not url:
                 raise VerificationFailure("privacy path requested but no private_facts_url")
             self._say(C.ok("privacy path: AgentFacts fetched from a NEUTRAL host"))
-            self._say(C.info("the agent's own domain never sees this resolution → requester stays unlinkable"))
+            self._say(
+                C.info(
+                    "the agent's own domain never sees this resolution → requester stays unlinkable"
+                )
+            )
             return url, "neutral"
         url = signed.get("primary_facts_url")
         if not url:
@@ -180,8 +202,9 @@ class NandaClient:
         if self.policy.required_issuers:
             self._say(C.ok("trust threshold met (all required issuers verified)"))
 
-    def _surface_contestations(self, bundle: dict, agent_did: str,
-                               agent_id: str | None = None) -> list:
+    def _surface_contestations(
+        self, bundle: dict, agent_did: str, agent_id: str | None = None
+    ) -> list:
         """Verify and surface affected-party counter-claims NEXT TO the issuer
         claims. The client never silently drops a contestation that has standing,
         and never trusts one that does not — both halves of the trust object are
@@ -189,7 +212,7 @@ class NandaClient:
         # De-duplicate by contestation_id so a replayed POST can't amplify one
         # complaint into an apparent flood.
         raw, seen = [], set()
-        for c in (bundle.get("contestations") or []):
+        for c in bundle.get("contestations") or []:
             cid = c.get("contestation_id")
             if cid in seen:
                 continue
@@ -201,7 +224,8 @@ class NandaClient:
         surfaced = []
         for c in raw:
             verdict = contest.verify_contestation(
-                c, expected_agent_did=agent_did, expected_agent_id=agent_id)
+                c, expected_agent_did=agent_did, expected_agent_id=agent_id
+            )
             if verdict.valid:
                 self._say(C.warn(f"CONTESTED [{verdict.category}] by {verdict.contestant}"))
                 self._say(C.info(f"“{verdict.statement}”"))
@@ -210,11 +234,15 @@ class NandaClient:
             else:
                 self._say(C.info(f"ignored unverifiable contestation: {verdict.reason}"))
         if surfaced:
-            self._say(C.warn(f"{len(surfaced)} verified contestation(s) surfaced "
-                             f"alongside the issuers' claims"))
+            self._say(
+                C.warn(
+                    f"{len(surfaced)} verified contestation(s) surfaced "
+                    f"alongside the issuers' claims"
+                )
+            )
         return surfaced
 
-    def _act(self, subject: dict) -> tuple[Optional[str], Optional[dict]]:
+    def _act(self, subject: dict) -> tuple[str | None, dict | None]:
         endpoints = (subject.get("endpoints") or {}).get("static") or []
         if not endpoints:
             self._say(C.warn("no static endpoint to act on"))
@@ -238,6 +266,8 @@ class NandaClient:
             resp.raise_for_status()
             return resp.json()
         except httpx.HTTPStatusError as exc:
-            raise VerificationFailure(f"{what} lookup failed: HTTP {exc.response.status_code}") from exc
+            raise VerificationFailure(
+                f"{what} lookup failed: HTTP {exc.response.status_code}"
+            ) from exc
         except httpx.HTTPError as exc:
             raise VerificationFailure(f"{what} lookup failed: {exc}") from exc

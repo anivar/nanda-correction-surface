@@ -6,14 +6,16 @@ AgentAddr is a detached Ed25519 signature over the JCS-canonical bytes, the clie
 recomputes those bytes, the signature no longer matches, and it refuses to
 proceed. Run via `python -m demo.tamper`.
 """
+
 from __future__ import annotations
 
 import copy
 
+from client import console as C
+from client.resolver import NandaClient, VerificationFailure
 from nanda_core import config
 from nanda_core.trust import TrustPolicy
-from client.resolver import NandaClient, VerificationFailure
-from client import console as C
+
 from . import _common as X
 
 
@@ -63,8 +65,11 @@ def main() -> None:
     ok &= _expect_rejected(client, sig_flipped, "signature-corrupted record")
 
     print()
-    print(C.ok(C.bold("tamper demo passed — every mutation rejected, fail closed"))
-          if ok else C.fail(C.bold("tamper demo FAILED")))
+    print(
+        C.ok(C.bold("tamper demo passed — every mutation rejected, fail closed"))
+        if ok
+        else C.fail(C.bold("tamper demo FAILED"))
+    )
     if not ok:
         raise SystemExit(1)
 

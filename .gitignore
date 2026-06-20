@@ -6,6 +6,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 
 # Runtime-generated keys, trust policy and registry state (created by the demo)
 shared/

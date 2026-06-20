@@ -7,13 +7,15 @@ it ALONGSIDE the issuers' claims — neither claim silently overrides the other.
 
 Run via `python -m demo.contest`.
 """
+
 from __future__ import annotations
 
+from client import console as C
+from client.resolver import NandaClient
 from nanda_core import config, contest
 from nanda_core.keystore import Identity
 from nanda_core.trust import TrustPolicy
-from client.resolver import NandaClient
-from client import console as C
+
 from . import _common as X
 
 
@@ -31,7 +33,8 @@ def main() -> None:
 
     # 1. The agent acknowledges it interacted with this party (the standing anchor).
     receipt, interaction_id = contest.mint_interaction_receipt(
-        agent, target["agent_id"], party.did, summary="summarisation job #4471")
+        agent, target["agent_id"], party.did, summary="summarisation job #4471"
+    )
     print(C.ok("interaction receipt minted (signed by the AGENT's key)"))
     print(C.info(f"interaction_id {interaction_id}"))
 
@@ -59,8 +62,14 @@ def main() -> None:
     result = client.resolve(target["agent_name"], path=target["path"], act=False)
 
     if any(getattr(v, "valid", False) for v in result.contestations):
-        print(C.ok(C.bold("contest demo passed — counter-claim verified and surfaced "
-                          "alongside the issuers' claims")))
+        print(
+            C.ok(
+                C.bold(
+                    "contest demo passed — counter-claim verified and surfaced "
+                    "alongside the issuers' claims"
+                )
+            )
+        )
     else:
         print(C.fail(C.bold("contest demo FAILED — contestation not surfaced")))
         raise SystemExit(1)

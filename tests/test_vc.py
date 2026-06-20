@@ -1,13 +1,14 @@
 """Tests for the Tier-2 Verifiable Credential layer (JWT-VC / vc-jose-cose)."""
+
 import datetime as dt
 
 import jwt as pyjwt
 import pytest
 
+from issuer import issue_auditor_credential, issue_provider_credential
 from nanda_core import vc
 from nanda_core.keystore import Identity
 from nanda_core.models import AgentFactsSubject, Evaluations
-from issuer import issue_provider_credential, issue_auditor_credential
 
 
 def _subject(agent_did: str) -> AgentFactsSubject:
@@ -53,10 +54,10 @@ def test_expired_and_not_yet_valid():
     provider = Identity.generate("provider")
     agent = Identity.generate("agent")
     token = issue_provider_credential(provider, _subject(agent.did), validity_days=1)
-    far_future = dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=10)
+    far_future = dt.datetime.now(dt.UTC) + dt.timedelta(days=10)
     with pytest.raises(vc.VCError, match="expired"):
         vc.verify_credential(token, trusted_issuers={provider.did}, now=far_future)
-    far_past = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=10)
+    far_past = dt.datetime.now(dt.UTC) - dt.timedelta(days=10)
     with pytest.raises(vc.VCError, match="not yet valid"):
         vc.verify_credential(token, trusted_issuers={provider.did}, now=far_past)
 
@@ -86,8 +87,12 @@ def _raw_vc(issuer: Identity, *, typ: str, with_until: bool) -> str:
     }
     if with_until:
         payload["validUntil"] = "2999-01-01T00:00:00Z"
-    return pyjwt.encode(payload, issuer.private_key, algorithm="EdDSA",
-                        headers={"typ": typ, "kid": issuer.verification_method})
+    return pyjwt.encode(
+        payload,
+        issuer.private_key,
+        algorithm="EdDSA",
+        headers={"typ": typ, "kid": issuer.verification_method},
+    )
 
 
 def test_non_vc_jwt_rejected_by_typ():

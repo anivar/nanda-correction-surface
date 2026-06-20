@@ -9,6 +9,7 @@ that the agent's own domain never sees the request), not a software difference.
 It also accepts contestations (the Level 2 return channel): signed counter-claims
 appended alongside the issuer credentials.
 """
+
 from __future__ import annotations
 
 import os
@@ -71,7 +72,11 @@ def add_contestation(agent_id: str, contestation: dict):
     # amplify it into many apparent complaints.
     cid = contestation.get("contestation_id")
     if any(c.get("contestation_id") == cid for c in contestations):
-        return {"ok": True, "duplicate": True, "agent_id": agent_id,
-                "contestations": len(contestations)}
+        return {
+            "ok": True,
+            "duplicate": True,
+            "agent_id": agent_id,
+            "contestations": len(contestations),
+        }
     contestations.append(contestation)
     return {"ok": True, "agent_id": agent_id, "contestations": len(contestations)}

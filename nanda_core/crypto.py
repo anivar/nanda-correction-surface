@@ -12,10 +12,10 @@ We deliberately use a *different* mechanism for the richer AgentFacts tier
 (full W3C Verifiable Credentials as JWTs — see vc.py). Matching the verification
 mechanism to each tier's volatility is the design judgement the brief asks for.
 """
+
 from __future__ import annotations
 
 import base64
-from typing import Optional
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -30,6 +30,7 @@ PROOF_KEY = "proof"
 
 # --- base64url helpers (no padding, as in JOSE) ---------------------------------
 
+
 def b64u_encode(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
 
@@ -40,6 +41,7 @@ def b64u_decode(s: str) -> bytes:
 
 
 # --- key generation and (de)serialisation --------------------------------------
+
 
 def generate_private_key() -> Ed25519PrivateKey:
     return Ed25519PrivateKey.generate()
@@ -65,6 +67,7 @@ def private_key_from_b64(s: str) -> Ed25519PrivateKey:
 
 # --- raw byte signing ----------------------------------------------------------
 
+
 def sign_bytes(priv: Ed25519PrivateKey, data: bytes) -> bytes:
     return priv.sign(data)  # cryptography always returns a detached 64-byte sig
 
@@ -82,11 +85,12 @@ def verify_bytes(pub: Ed25519PublicKey, sig: bytes, data: bytes) -> bool:
 
 # --- the signed-record format (detached Ed25519 over JCS) ----------------------
 
+
 def sign_record(
     record: dict,
     priv: Ed25519PrivateKey,
     *,
-    verification_method: Optional[str] = None,
+    verification_method: str | None = None,
 ) -> dict:
     """Return `record` with a `proof` field: a detached Ed25519 signature over the
     JCS-canonical bytes of every field *except* `proof` itself.

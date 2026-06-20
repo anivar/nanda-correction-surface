@@ -18,6 +18,7 @@ client-facing half of that as one explicit, inspectable object:
 The policy is established at setup (the demo writes it) and loaded by the client.
 The client never fetches its trust anchors at resolve time — that would defeat them.
 """
+
 from __future__ import annotations
 
 import json
@@ -46,7 +47,7 @@ class TrustPolicy:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "TrustPolicy":
+    def from_dict(cls, d: dict) -> TrustPolicy:
         return cls(
             resolver_did=d["resolver_did"],
             trusted_issuers=set(d.get("trusted_issuers", [])),
@@ -60,6 +61,6 @@ class TrustPolicy:
             json.dump(self.to_dict(), fh, indent=2)
 
     @classmethod
-    def load(cls, path: str) -> "TrustPolicy":
-        with open(path, "r", encoding="utf-8") as fh:
+    def load(cls, path: str) -> TrustPolicy:
+        with open(path, encoding="utf-8") as fh:
             return cls.from_dict(json.load(fh))

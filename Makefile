@@ -1,22 +1,32 @@
-.PHONY: help venv test demo up docker-demo down clean
+.PHONY: help sync test lint format demo up docker-demo down clean
 
 help:
-	@echo "make demo         - run the full demo locally (no Docker)"
-	@echo "make test         - run the unit/integration test suite"
+	@echo "make sync         - create/refresh the uv environment (Python 3.14)"
+	@echo "make demo         - run the full demo locally with uv (no Docker)"
+	@echo "make test         - run the test suite (uv run pytest)"
+	@echo "make lint         - ruff check + format --check"
+	@echo "make format       - ruff format + check --fix"
 	@echo "make up           - build and start all services with docker compose"
 	@echo "make docker-demo  - run the end-to-end demo inside docker compose"
-	@echo "make down         - stop docker compose and remove volumes"
+	@echo "make down         - stop docker compose"
 	@echo "make clean        - remove venv, caches and runtime state"
 
-venv:
-	@if command -v uv >/dev/null 2>&1; then uv venv .venv && uv pip install -r requirements.txt -r requirements-dev.txt; \
-	else python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-dev.txt; fi
+sync:
+	uv sync
 
 test:
-	@. .venv/bin/activate && python -m pytest tests/ -q
+	uv run pytest -q
+
+lint:
+	uv run ruff check .
+	uv run ruff format --check .
+
+format:
+	uv run ruff format .
+	uv run ruff check --fix .
 
 demo:
-	@./demo/run_local.sh
+	./demo/run_local.sh
 
 up:
 	docker compose up --build -d
@@ -25,7 +35,8 @@ docker-demo: up
 	docker compose --profile demo run --rm demo
 
 down:
-	docker compose down -v
+	docker compose down
 
 clean:
-	rm -rf .venv shared **/__pycache__ .pytest_cache
+	rm -rf .venv shared .pytest_cache .ruff_cache
+	find . -type d -name __pycache__ -prune -exec rm -rf {} +

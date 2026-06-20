@@ -5,6 +5,7 @@ is an actual round-trip, not a print statement. Each registered agent exposes
 `/agents/{slug}/invoke`; the transform is deliberately trivial (the point of the
 prototype is the resolution and trust path, not the agent's cleverness).
 """
+
 from __future__ import annotations
 
 from fastapi import FastAPI
@@ -31,9 +32,9 @@ def root():
 @app.post("/agents/{slug}/invoke")
 def invoke(slug: str, body: Invocation):
     if slug == "translator":
-        output = f"[fr] {body.input[::-1]}"        # stand-in 'translation'
+        output = f"[fr] {body.input[::-1]}"  # stand-in 'translation'
     elif slug == "summarizer":
-        output = body.input.split(".")[0][:48]      # stand-in 'summary'
+        output = body.input.split(".")[0][:48]  # stand-in 'summary'
     else:
         output = body.input.upper()
     return {"agent": slug, "task": body.task, "input": body.input, "output": output}

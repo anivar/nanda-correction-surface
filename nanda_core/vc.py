@@ -20,11 +20,12 @@ payload directly. Issuer keys are did:key, so verifying needs no network call.
 Note on canonicalisation: unlike the AgentAddr path, JWT-VCs need none — the JWS
 signs the exact compact serialisation, so there is nothing to re-canonicalise.
 """
+
 from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import jwt
 
@@ -42,11 +43,11 @@ class VCError(Exception):
 
 
 def _now() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc)
+    return dt.datetime.now(dt.UTC)
 
 
 def iso(t: dt.datetime) -> str:
-    return t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return t.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _parse_iso(s: str) -> dt.datetime:
@@ -59,7 +60,7 @@ def issue_credential(
     issuer: Identity,
     subject_id: str,
     claims: dict,
-    extra_types: Optional[Iterable[str]] = None,
+    extra_types: Iterable[str] | None = None,
     validity_days: int = 365,
 ) -> str:
     """Issue a VC as a signed JWT (vc-jose-cose). `claims` becomes the
@@ -92,8 +93,8 @@ def issue_credential(
 def verify_credential(
     token: str,
     *,
-    trusted_issuers: Optional[set[str]] = None,
-    now: Optional[dt.datetime] = None,
+    trusted_issuers: set[str] | None = None,
+    now: dt.datetime | None = None,
 ) -> dict:
     """Verify a JWT-VC and return the credential dict, or raise VCError.
 

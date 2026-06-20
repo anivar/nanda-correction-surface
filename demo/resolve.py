@@ -5,12 +5,14 @@ verifying and printing every hop, then acting on the verified endpoint. One agen
 is resolved via the provider (primary) path, the other via the neutral (privacy)
 path. Run via `python -m demo.resolve`.
 """
+
 from __future__ import annotations
 
+from client import console as C
+from client.resolver import NandaClient
 from nanda_core import config
 from nanda_core.trust import TrustPolicy
-from client.resolver import NandaClient
-from client import console as C
+
 from . import _common as X
 
 

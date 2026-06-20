@@ -1,4 +1,5 @@
 """Unit tests for the cryptographic core: canonicalisation, signed records, did:key."""
+
 import pytest
 
 from nanda_core import crypto, didkey

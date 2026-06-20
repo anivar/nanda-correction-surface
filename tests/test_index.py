@@ -1,19 +1,23 @@
 """Integration tests for the lean index service (in-process, no network)."""
+
 from fastapi.testclient import TestClient
 
-from nanda_core import crypto, didkey
 from index.app import app
+from nanda_core import crypto, didkey
 
 client = TestClient(app)
 
 
 def _register(name="urn:agent:acme:translator"):
-    return client.post("/register", json={
-        "agent_name": name,
-        "primary_facts_url": "http://facts-primary:8000/facts/x",
-        "private_facts_url": "http://facts-neutral:8000/facts/x",
-        "ttl": 3600,
-    })
+    return client.post(
+        "/register",
+        json={
+            "agent_name": name,
+            "primary_facts_url": "http://facts-primary:8000/facts/x",
+            "private_facts_url": "http://facts-neutral:8000/facts/x",
+            "ttl": 3600,
+        },
+    )
 
 
 def test_register_then_resolve_is_signed_by_resolver():

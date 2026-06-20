@@ -10,28 +10,41 @@ Two distinct forgeries, both caught at the VC hop, both fail closed:
 
 Run via `python -m demo.spoof`.
 """
+
 from __future__ import annotations
 
+from client import console as C
+from client.resolver import NandaClient, VerificationFailure
+from issuer import issue_provider_credential
 from nanda_core import config
 from nanda_core.keystore import Identity
 from nanda_core.models import AgentFactsSubject, Endpoints, FactsBundle
 from nanda_core.trust import TrustPolicy
-from issuer import issue_provider_credential
-from client.resolver import NandaClient, VerificationFailure
-from client import console as C
+
 from . import _common as X
 
 
 def _register_rogue(name: str, provider_vc: str, agent_did: str, label: str) -> str:
     agent_id = X.new_agent_id()
-    bundle = FactsBundle(agent_id=agent_id, agent_did=agent_did, agent_name=name,
-                         label=label, provider_vc=provider_vc, auditor_vc=None).model_dump()
+    bundle = FactsBundle(
+        agent_id=agent_id,
+        agent_did=agent_did,
+        agent_name=name,
+        label=label,
+        provider_vc=provider_vc,
+        auditor_vc=None,
+    ).model_dump()
     primary = f"{config.FACTS_PRIMARY_URL}/facts/{agent_id}"
     X.put_json(primary, bundle)
-    X.post_json(f"{config.INDEX_URL}/register", {
-        "agent_id": agent_id, "agent_name": name,
-        "primary_facts_url": primary, "ttl": 3600,
-    })
+    X.post_json(
+        f"{config.INDEX_URL}/register",
+        {
+            "agent_id": agent_id,
+            "agent_name": name,
+            "primary_facts_url": primary,
+            "ttl": 3600,
+        },
+    )
     return name
 
 
@@ -56,12 +69,15 @@ def main() -> None:
     rogue_issuer = Identity.generate("Rogue Issuer (not in trust policy)")
     rogue_agent = Identity.generate("rogue-agent")
     subject = AgentFactsSubject(
-        id=rogue_agent.did, agent_name="urn:agent:rogue:translator",
+        id=rogue_agent.did,
+        agent_name="urn:agent:rogue:translator",
         label="RogueTranslator",
         endpoints=Endpoints(static=[f"{config.AGENT_URL}/agents/translator/invoke"]),
     )
     forged_vc = issue_provider_credential(rogue_issuer, subject)
-    name1 = _register_rogue("urn:agent:rogue:translator", forged_vc, rogue_agent.did, "RogueTranslator")
+    name1 = _register_rogue(
+        "urn:agent:rogue:translator", forged_vc, rogue_agent.did, "RogueTranslator"
+    )
     ok &= _expect_rejected(client, name1, "untrusted-issuer credential")
 
     # Scenario 2 — a genuine, trusted-issuer credential, then mutated.
@@ -71,14 +87,18 @@ def main() -> None:
     genuine_bundle = X.get_json(genuine_addr["primary_facts_url"])
     head, payload, sig = genuine_bundle["provider_vc"].split(".")
     mid = len(payload) // 2
-    tampered_payload = payload[:mid] + ("A" if payload[mid] != "A" else "B") + payload[mid + 1:]
+    tampered_payload = payload[:mid] + ("A" if payload[mid] != "A" else "B") + payload[mid + 1 :]
     tampered_vc = ".".join([head, tampered_payload, sig])
-    name2 = _register_rogue("urn:agent:rogue:tampered", tampered_vc,
-                            genuine_agent["did"], "TamperedFacts")
+    name2 = _register_rogue(
+        "urn:agent:rogue:tampered", tampered_vc, genuine_agent["did"], "TamperedFacts"
+    )
     ok &= _expect_rejected(client, name2, "tampered trusted-issuer credential")
 
-    print(C.ok(C.bold("spoof demo passed — both forgeries rejected, fail closed"))
-          if ok else C.fail(C.bold("spoof demo FAILED")))
+    print(
+        C.ok(C.bold("spoof demo passed — both forgeries rejected, fail closed"))
+        if ok
+        else C.fail(C.bold("spoof demo FAILED"))
+    )
     if not ok:
         raise SystemExit(1)
 

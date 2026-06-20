@@ -1,7 +1,13 @@
 """The AgentFacts -> A2A Agent Card projection (superset claim, made concrete)."""
+
 from nanda_core.a2a import to_agent_card
 from nanda_core.models import (
-    AgentFactsSubject, Authentication, Capabilities, Endpoints, Provider, Skill,
+    AgentFactsSubject,
+    Authentication,
+    Capabilities,
+    Endpoints,
+    Provider,
+    Skill,
 )
 
 
@@ -15,11 +21,20 @@ def test_projection_to_a2a_agent_card():
         provider=Provider(name="ACME Corp", url="https://acme.example"),
         endpoints=Endpoints(static=["https://agent.example/invoke"]),
         capabilities=Capabilities(
-            modalities=["text", "audio"], streaming=True,
-            authentication=Authentication(methods=["oauth2"], requiredScopes=["translate:real-time"]),
+            modalities=["text", "audio"],
+            streaming=True,
+            authentication=Authentication(
+                methods=["oauth2"], requiredScopes=["translate:real-time"]
+            ),
         ),
-        skills=[Skill(id="translation", description="Real-time translation",
-                      inputModes=["text"], outputModes=["text"])],
+        skills=[
+            Skill(
+                id="translation",
+                description="Real-time translation",
+                inputModes=["text"],
+                outputModes=["text"],
+            )
+        ],
     ).model_dump()
 
     card = to_agent_card(subject)

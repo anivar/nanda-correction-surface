@@ -5,6 +5,7 @@ paths and a real auditor claim:
   - translator  → resolved via the PRIMARY (provider-hosted) path
   - summarizer  → resolved via the PRIVATE (neutral-host) path, and later contested
 """
+
 from __future__ import annotations
 
 import uuid
@@ -12,7 +13,7 @@ import uuid
 import httpx
 
 from nanda_core import config
-from nanda_core.keystore import Identity, read_json, write_json
+from nanda_core.keystore import read_json, write_json
 
 # --- the two demonstration agents ---------------------------------------------
 
@@ -28,14 +29,19 @@ AGENTS = [
         "streaming": True,
         "auth_methods": ["oauth2", "jwt"],
         "scopes": ["translate:real-time", "language:detect"],
-        "skills": [{
-            "id": "translation",
-            "description": "Real-time translation between >25 languages",
-            "inputModes": ["text", "audio/ogg"],
-            "outputModes": ["text", "audio/wav"],
-        }],
-        "evaluations": {"performanceScore": 4.8, "availability90d": "99.93%",
-                        "auditorID": "Capabilities Auditor v2.1"},
+        "skills": [
+            {
+                "id": "translation",
+                "description": "Real-time translation between >25 languages",
+                "inputModes": ["text", "audio/ogg"],
+                "outputModes": ["text", "audio/wav"],
+            }
+        ],
+        "evaluations": {
+            "performanceScore": 4.8,
+            "availability90d": "99.93%",
+            "auditorID": "Capabilities Auditor v2.1",
+        },
         "path": "primary",
     },
     {
@@ -49,20 +55,26 @@ AGENTS = [
         "streaming": False,
         "auth_methods": ["oauth2"],
         "scopes": ["summarize:doc"],
-        "skills": [{
-            "id": "summarisation",
-            "description": "Topic-guided abstractive summarisation",
-            "inputModes": ["text"],
-            "outputModes": ["text"],
-        }],
-        "evaluations": {"performanceScore": 4.5, "availability90d": "99.50%",
-                        "auditorID": "Capabilities Auditor v2.1"},
+        "skills": [
+            {
+                "id": "summarisation",
+                "description": "Topic-guided abstractive summarisation",
+                "inputModes": ["text"],
+                "outputModes": ["text"],
+            }
+        ],
+        "evaluations": {
+            "performanceScore": 4.5,
+            "availability90d": "99.50%",
+            "auditorID": "Capabilities Auditor v2.1",
+        },
         "path": "private",
     },
 ]
 
 
 # --- http helpers -------------------------------------------------------------
+
 
 def get_json(url: str, **params) -> dict:
     r = httpx.get(url, params=params or None, timeout=10.0)
@@ -83,6 +95,7 @@ def post_json(url: str, body: dict) -> dict:
 
 
 # --- demo state ---------------------------------------------------------------
+
 
 def save_state(state: dict) -> None:
     config.ensure_shared_dir()

@@ -1,4 +1,5 @@
 """Integration tests for the AgentFacts host (store, serve, append contestation)."""
+
 from fastapi.testclient import TestClient
 
 from facts.app import app
@@ -37,7 +38,7 @@ def test_append_contestation():
 
 
 def test_contestation_dedup_by_id():
-    client.put(f"/facts/{AGENT_ID}", json=BUNDLE)   # resets contestations
+    client.put(f"/facts/{AGENT_ID}", json=BUNDLE)  # resets contestations
     c = {"contestation_id": "dup1", "x": 1}
     client.post(f"/facts/{AGENT_ID}/contestations", json=c)
     r2 = client.post(f"/facts/{AGENT_ID}/contestations", json=c)

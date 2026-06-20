@@ -1,4 +1,5 @@
 """Tests for the Tier-1 AgentAddr: signing, verification, fail-closed on tamper."""
+
 from nanda_core import crypto
 from nanda_core.keystore import Identity
 from nanda_core.models import AgentAddr, sign_agentaddr

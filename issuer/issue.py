@@ -9,6 +9,7 @@ Both are W3C VCs signed by distinct did:key issuers, so a client can require the
 provider claim and treat the auditor claim as independent corroboration — or
 demand both. The host serving them is irrelevant to either signature.
 """
+
 from __future__ import annotations
 
 from nanda_core import vc

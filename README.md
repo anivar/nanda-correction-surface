@@ -20,7 +20,8 @@ docker compose up --build -d
 docker compose --profile demo run --rm demo
 ```
 
-**Without Docker** (one script starts everything on localhost and runs the demo):
+**Without Docker** — needs [uv](https://docs.astral.sh/uv/) (it provisions Python
+3.14 and the locked deps for you):
 
 ```bash
 ./demo/run_local.sh          # or:  make demo
@@ -28,6 +29,9 @@ docker compose --profile demo run --rm demo
 
 Either way you get the same five-step walkthrough: register → resolve → tamper →
 spoof → contest.
+
+Toolchain: **uv** (env + Python 3.14, `uv.lock` pinned), **ruff** (lint + format),
+`pytest`. No global Python or `pip` needed.
 
 ## What you'll see
 
@@ -111,7 +115,8 @@ docs/         design note, A2A mapping
 ## Testing
 
 ```bash
-make test         # or: . .venv/bin/activate && python -m pytest tests/ -q
+make test         # or: uv run pytest -q
+make lint         # ruff check + format --check
 ```
 
 35 tests cover canonicalisation, signed records, did:key, AgentAddr tamper

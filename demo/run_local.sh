@@ -1,28 +1,23 @@
 #!/usr/bin/env bash
-# Run the full NANDA prototype locally, WITHOUT Docker.
+# Run the full NANDA prototype locally with uv, WITHOUT Docker.
 #
 # Brings up the four services on localhost (index 8000, facts-primary 8001,
 # facts-neutral 8002, agent 8003), runs the end-to-end demo against them, and
 # tears everything down on exit.
 #
-#   ./demo/run_local.sh
+#   ./demo/run_local.sh          # or: make demo
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 export FORCE_COLOR=1
 
-# --- venv + deps --------------------------------------------------------------
-if [[ ! -d .venv ]]; then
-  echo "creating .venv ..."
-  if command -v uv >/dev/null 2>&1; then uv venv .venv; else python3 -m venv .venv; fi
-fi
-# shellcheck disable=SC1091
-source .venv/bin/activate
-if ! python -c "import fastapi, cryptography, jwt, rfc8785, base58, httpx" 2>/dev/null; then
-  echo "installing dependencies ..."
-  if command -v uv >/dev/null 2>&1; then uv pip install -r requirements.txt
-  else pip install -q -r requirements.txt; fi
-fi
+command -v uv >/dev/null 2>&1 || {
+  echo "uv is required — install it: https://docs.astral.sh/uv/getting-started/installation/" >&2
+  exit 1
+}
+
+echo "syncing environment with uv (Python $(cat .python-version)) ..."
+uv sync --quiet
 
 # --- start services -----------------------------------------------------------
 PIDS=()
@@ -34,7 +29,7 @@ trap cleanup EXIT INT TERM
 
 start() { # name module port [extra env...]
   local name="$1" module="$2" port="$3"; shift 3
-  env "$@" uvicorn "$module" --host 0.0.0.0 --port "$port" --log-level warning \
+  env "$@" uv run uvicorn "$module" --host 0.0.0.0 --port "$port" --log-level warning \
       > "/tmp/nanda_${name}.log" 2>&1 &
   PIDS+=("$!")
 }
@@ -60,4 +55,4 @@ done
 echo "services healthy."; echo
 
 # --- run the demo -------------------------------------------------------------
-python -m demo.run_all
+uv run python -m demo.run_all

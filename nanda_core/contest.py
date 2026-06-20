@@ -22,11 +22,11 @@ an interaction the agent itself acknowledged having with you. (Limitation, state
 plainly in the README: a hostile agent could withhold receipts. Production
 standing would use a mutually-signed interaction log or a notary — see next steps.)
 """
+
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Optional
 
 from . import crypto, vc
 from .didkey import decode_did_key
@@ -34,8 +34,9 @@ from .keystore import Identity
 from .models import Contestation, InteractionReceipt
 
 
-def mint_interaction_receipt(agent: Identity, agent_id: str, counterparty_did: str,
-                             summary: str = "") -> tuple[dict, str]:
+def mint_interaction_receipt(
+    agent: Identity, agent_id: str, counterparty_did: str, summary: str = ""
+) -> tuple[dict, str]:
     """The agent acknowledges an interaction with `counterparty_did`. Returns the
     signed receipt and its interaction id. The receipt binds BOTH the agent's
     did:key and its registry handle (agent_id), so it cannot be replayed as
@@ -50,7 +51,9 @@ def mint_interaction_receipt(agent: Identity, agent_id: str, counterparty_did: s
         summary=summary,
         timestamp=vc.iso(vc._now()),
     ).model_dump()
-    signed = crypto.sign_record(body, agent.private_key, verification_method=agent.verification_method)
+    signed = crypto.sign_record(
+        body, agent.private_key, verification_method=agent.verification_method
+    )
     return signed, interaction_id
 
 
@@ -76,22 +79,24 @@ def file_contestation(
         created=vc.iso(vc._now()),
         receipt=receipt,
     ).model_dump()
-    return crypto.sign_record(body, contestant.private_key,
-                              verification_method=contestant.verification_method)
+    return crypto.sign_record(
+        body, contestant.private_key, verification_method=contestant.verification_method
+    )
 
 
 @dataclass
 class ContestationVerdict:
     valid: bool
     reason: str
-    contestant: Optional[str] = None
-    statement: Optional[str] = None
-    interaction_id: Optional[str] = None
-    category: Optional[str] = None
+    contestant: str | None = None
+    statement: str | None = None
+    interaction_id: str | None = None
+    category: str | None = None
 
 
-def verify_contestation(contestation: dict, *, expected_agent_did: str,
-                        expected_agent_id: Optional[str] = None) -> ContestationVerdict:
+def verify_contestation(
+    contestation: dict, *, expected_agent_did: str, expected_agent_id: str | None = None
+) -> ContestationVerdict:
     """Verify a contestation's signature AND its standing. Fails closed: any check
     that does not pass yields valid=False with a reason.
 
@@ -136,9 +141,17 @@ def verify_contestation(contestation: dict, *, expected_agent_did: str,
     if contestation.get("agent_did") != expected_agent_did:
         return bad("contestation agent_did does not match resolved agent")
     if receipt.get("agent_id") != contestation.get("agent_id"):
-        return bad("receipt agent_id does not match contestation (no standing for this registry entry)")
+        return bad(
+            "receipt agent_id does not match contestation (no standing for this registry entry)"
+        )
     if expected_agent_id is not None and contestation.get("agent_id") != expected_agent_id:
         return bad("contestation agent_id does not match resolved agent")
 
-    return ContestationVerdict(True, "verified: signed by contestant with acknowledged standing",
-                               contestant, statement, interaction_id, category)
+    return ContestationVerdict(
+        True,
+        "verified: signed by contestant with acknowledged standing",
+        contestant,
+        statement,
+        interaction_id,
+        category,
+    )

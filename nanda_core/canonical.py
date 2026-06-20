@@ -14,6 +14,7 @@ our own; canonicalisation has subtle edge cases (UTF-16 key ordering, ECMAScript
 number formatting, NaN/Infinity rejection) that are exactly where hand-rolled
 versions go wrong.
 """
+
 from __future__ import annotations
 
 import rfc8785

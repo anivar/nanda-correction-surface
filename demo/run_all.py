@@ -5,10 +5,12 @@
 Used by `docker compose --profile demo run --rm demo` and by ./demo/run_local.sh.
 Run directly via `python -m demo.run_all`.
 """
+
 from __future__ import annotations
 
 from client import console as C
-from . import register, resolve, tamper, spoof, contest
+
+from . import contest, register, resolve, spoof, tamper
 
 
 def main() -> None:

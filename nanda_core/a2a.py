@@ -11,6 +11,7 @@ claim concrete and testable in both directions:
 A2A Agent Cards are published at /.well-known/agent-card.json. Field mapping is
 documented in docs/a2a-mapping.md.
 """
+
 from __future__ import annotations
 
 

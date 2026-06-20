@@ -9,16 +9,26 @@ Creates the issuers (provider + independent auditor), and for each agent:
 Finally it writes the client trust policy (pinning the resolver + the two issuer
 DIDs) and the demo state. Run via `python -m demo.register`.
 """
+
 from __future__ import annotations
 
+from client import console as C
+from issuer import issue_auditor_credential, issue_provider_credential
 from nanda_core import config
 from nanda_core.keystore import Identity
-from nanda_core.models import AgentFactsSubject, Capabilities, Authentication, Endpoints, \
-    Evaluations, FactsBundle, Provider, Skill
+from nanda_core.models import (
+    AgentFactsSubject,
+    Authentication,
+    Capabilities,
+    Endpoints,
+    Evaluations,
+    FactsBundle,
+    Provider,
+    Skill,
+)
 from nanda_core.trust import TrustPolicy
-from issuer import issue_provider_credential, issue_auditor_credential
+
 from . import _common as X
-from client import console as C
 
 
 def _build_subject(agent: Identity, spec: dict, provider: Identity) -> AgentFactsSubject:
@@ -35,7 +45,9 @@ def _build_subject(agent: Identity, spec: dict, provider: Identity) -> AgentFact
         capabilities=Capabilities(
             modalities=spec["modalities"],
             streaming=spec["streaming"],
-            authentication=Authentication(methods=spec["auth_methods"], requiredScopes=spec["scopes"]),
+            authentication=Authentication(
+                methods=spec["auth_methods"], requiredScopes=spec["scopes"]
+            ),
         ),
         skills=[Skill(**s) for s in spec["skills"]],
         evaluations=Evaluations(**spec["evaluations"]),
@@ -65,11 +77,16 @@ def main() -> dict:
         provider_vc = issue_provider_credential(provider, subject)
         certification = {"level": "verified", "issuer": "ACME Independent Audits"}
         auditor_vc = issue_auditor_credential(
-            auditor, agent.did, Evaluations(**spec["evaluations"]), certification)
+            auditor, agent.did, Evaluations(**spec["evaluations"]), certification
+        )
 
         bundle = FactsBundle(
-            agent_id=agent_id, agent_did=agent.did, agent_name=spec["agent_name"],
-            label=spec["label"], provider_vc=provider_vc, auditor_vc=auditor_vc,
+            agent_id=agent_id,
+            agent_did=agent.did,
+            agent_name=spec["agent_name"],
+            label=spec["label"],
+            provider_vc=provider_vc,
+            auditor_vc=auditor_vc,
         ).model_dump()
 
         # Host on BOTH facts hosts: provider domain and neutral host.
@@ -79,13 +96,16 @@ def main() -> dict:
         X.put_json(private_url, bundle)
 
         # Register in the lean index -> signed AgentAddr.
-        signed_addr = X.post_json(f"{config.INDEX_URL}/register", {
-            "agent_id": agent_id,
-            "agent_name": spec["agent_name"],
-            "primary_facts_url": primary_url,
-            "private_facts_url": private_url,
-            "ttl": 3600,
-        })
+        signed_addr = X.post_json(
+            f"{config.INDEX_URL}/register",
+            {
+                "agent_id": agent_id,
+                "agent_name": spec["agent_name"],
+                "primary_facts_url": primary_url,
+                "private_facts_url": private_url,
+                "ttl": 3600,
+            },
+        )
 
         print(C.ok(f"registered {spec['agent_name']}"))
         print(C.info(f"agent_id   {agent_id}"))
@@ -93,16 +113,18 @@ def main() -> dict:
         print(C.info(f"resolve via {spec['path']} path"))
         print()
 
-        agents_state.append({
-            "agent_id": agent_id,
-            "agent_name": spec["agent_name"],
-            "label": spec["label"],
-            "slug": spec["slug"],
-            "did": agent.did,
-            "path": spec["path"],
-            "secret": agent.to_secret_dict(),   # for the contestation step (shared/ only)
-            "addr_proof_signer": signed_addr["proof"]["verificationMethod"],
-        })
+        agents_state.append(
+            {
+                "agent_id": agent_id,
+                "agent_name": spec["agent_name"],
+                "label": spec["label"],
+                "slug": spec["slug"],
+                "did": agent.did,
+                "path": spec["path"],
+                "secret": agent.to_secret_dict(),  # for the contestation step (shared/ only)
+                "addr_proof_signer": signed_addr["proof"]["verificationMethod"],
+            }
+        )
 
     # Client trust policy: pin the resolver + both issuers; provider is required.
     policy = TrustPolicy(

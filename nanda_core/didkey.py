@@ -14,6 +14,7 @@ Encoding (per the W3C did:key spec and multicodec table):
 where 0xed01 is the varint multicodec for ed25519-pub and 'z' is the multibase
 prefix for base58btc. Real Ed25519 did:keys therefore always start with `z6Mk`.
 """
+
 from __future__ import annotations
 
 import base58
@@ -43,7 +44,7 @@ def decode_did_key(did: str) -> Ed25519PublicKey:
     on anything that is not a well-formed Ed25519 did:key."""
     if not did.startswith(_DID_KEY_PREFIX):
         raise ValueError(f"not a did:key: {did!r}")
-    multibase = did[len(_DID_KEY_PREFIX):]
+    multibase = did[len(_DID_KEY_PREFIX) :]
     # A verification-method URL may carry a fragment (did:key:z...#z...); drop it.
     multibase = multibase.split("#", 1)[0]
     if not multibase.startswith(_MULTIBASE_BASE58BTC):
@@ -60,5 +61,5 @@ def decode_did_key(did: str) -> Ed25519PublicKey:
 def verification_method(did: str) -> str:
     """The verification-method id for a did:key is the DID with its own value as
     the fragment: did:key:z6Mk...#z6Mk... — used as the JWT `kid`."""
-    value = did[len(_DID_KEY_PREFIX):]
+    value = did[len(_DID_KEY_PREFIX) :]
     return f"{did}#{value}"
