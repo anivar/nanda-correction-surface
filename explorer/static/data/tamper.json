@@ -1,0 +1,43 @@
+{
+  "scenario": "tamper",
+  "title": "Tamper \u2014 a mutated AgentAddr is rejected",
+  "summary": "AgentAddr failed verification \u2014 fail closed",
+  "refused": true,
+  "steps": [
+    {
+      "n": 1,
+      "from": "Client",
+      "to": "Index",
+      "title": "Resolve AgentName \u2192 AgentAddr",
+      "detail": "urn:agent:acme:translator",
+      "status": "info",
+      "layer": "paper",
+      "tier": "Tier 1 \u00b7 Lean Index",
+      "data": {
+        "agent_id": "nanda:translator-001",
+        "agent_did": "did:key:z6Mkojax7o\u2026",
+        "registration_type": "did",
+        "ttl": 3600
+      },
+      "boundary": false
+    },
+    {
+      "n": 2,
+      "from": "Client",
+      "to": "Client",
+      "title": "Verify AgentAddr \u2014 Ed25519 over JCS, resolver pinned",
+      "detail": "signature INVALID \u2014 record was tampered with",
+      "status": "fail",
+      "layer": "paper",
+      "tier": "Tier 1",
+      "data": {},
+      "boundary": false
+    }
+  ],
+  "identities": {
+    "resolver": "did:key:z6MkqAnqRS\u2026",
+    "provider_issuer": "did:key:z6Mkk6qZhF\u2026",
+    "auditor_issuer": "did:key:z6MkfECQFT\u2026",
+    "agent": "did:key:z6Mkojax7o\u2026"
+  }
+}

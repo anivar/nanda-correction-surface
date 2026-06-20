@@ -63,6 +63,18 @@ services:
       timeout: 3s
       retries: 10
 
+  # Protocol Explorer — self-contained visual walk-through (real in-process crypto).
+  # Open http://localhost:8090 after `docker compose up`.
+  explorer:
+    <<: *common
+    command: uvicorn explorer.app:app --host 0.0.0.0 --port 8000
+    ports: ["8090:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else sys.exit(1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
   # One-shot end-to-end demo. Run with: docker compose --profile demo run --rm demo
   demo:
     <<: *common

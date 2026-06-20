@@ -1,0 +1,127 @@
+{
+  "scenario": "privacy",
+  "title": "Privacy path \u2014 fetch facts from a neutral host",
+  "summary": "Resolution complete \u2014 every hop verified",
+  "refused": false,
+  "steps": [
+    {
+      "n": 1,
+      "from": "Client",
+      "to": "Index",
+      "title": "Resolve AgentName \u2192 AgentAddr",
+      "detail": "urn:agent:acme:translator",
+      "status": "info",
+      "layer": "paper",
+      "tier": "Tier 1 \u00b7 Lean Index",
+      "data": {
+        "agent_id": "nanda:translator-001",
+        "agent_did": "did:key:z6Mkt3fdWT\u2026",
+        "registration_type": "did",
+        "ttl": 3600
+      },
+      "boundary": false
+    },
+    {
+      "n": 2,
+      "from": "Client",
+      "to": "Client",
+      "title": "Verify AgentAddr \u2014 Ed25519 over JCS, resolver pinned",
+      "detail": "signature valid; signed by the pinned index resolver",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 1",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 3,
+      "from": "Client",
+      "to": "Client",
+      "title": "Select AgentFacts source",
+      "detail": "privacy path \u2192 NEUTRAL host (agent's domain never sees the request)",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 4,
+      "from": "Client",
+      "to": "Neutral Host",
+      "title": "Fetch AgentFacts bundle",
+      "detail": "GET from the neutral host (untrusted; it signs nothing)",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 5,
+      "from": "Client",
+      "to": "Client",
+      "title": "Verify provider credential \u2014 W3C VC (JWT)",
+      "detail": "issuer did:key:z6MkvEQ1J8\u2026 \u00b7 trusted \u00b7 bound to agent_did",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2 \u00b7 AgentFacts",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 6,
+      "from": "Auditor",
+      "to": "Client",
+      "title": "Verify auditor credential \u2014 independent issuer",
+      "detail": "performanceScore 4.8 \u00b7 availability 99.93% \u00b7 subject matches",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2 \u00b7 threshold met",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 7,
+      "from": "Client",
+      "to": "Client",
+      "title": "Surface contestations \u2014 affected-party return path",
+      "detail": "none on record (the affected-party channel the operator-side stack omits)",
+      "status": "info",
+      "layer": "extension",
+      "tier": "Correction surface",
+      "data": {},
+      "boundary": true
+    },
+    {
+      "n": 8,
+      "from": "Client",
+      "to": "\u2014",
+      "title": "Authorization (operator-side) \u2014 context, not run here",
+      "detail": "AuthZEN \u00b7 Txn-Tokens-for-Agents \u00b7 delegation layers \u2014 decide if the action MAY proceed",
+      "status": "info",
+      "layer": "context",
+      "tier": "Operator-side authz",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 9,
+      "from": "Client",
+      "to": "Agent",
+      "title": "Act on the verified endpoint",
+      "detail": "POST https://agent.example/invoke \u2192 response",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 3 \u00b7 Endpoint",
+      "data": {},
+      "boundary": false
+    }
+  ],
+  "identities": {
+    "resolver": "did:key:z6Mkn3er8y\u2026",
+    "provider_issuer": "did:key:z6MkvEQ1J8\u2026",
+    "auditor_issuer": "did:key:z6MkqB4Nig\u2026",
+    "agent": "did:key:z6Mkt3fdWT\u2026"
+  }
+}

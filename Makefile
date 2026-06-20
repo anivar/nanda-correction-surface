@@ -3,6 +3,7 @@
 help:
 	@echo "make sync         - create/refresh the uv environment (Python 3.14)"
 	@echo "make demo         - run the full demo locally with uv (no Docker)"
+	@echo "make explorer     - serve the protocol explorer UI at http://localhost:8090"
 	@echo "make test         - run the test suite (uv run pytest)"
 	@echo "make lint         - ruff check + format --check"
 	@echo "make format       - ruff format + check --fix"
@@ -27,6 +28,9 @@ format:
 
 demo:
 	./demo/run_local.sh
+
+explorer:
+	uv run uvicorn explorer.app:app --host 0.0.0.0 --port 8090
 
 up:
 	docker compose up --build -d

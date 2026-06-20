@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "key": "resolve",
+      "title": "Resolve an agent \u2014 verify every hop, then act"
+    },
+    {
+      "key": "privacy",
+      "title": "Privacy path \u2014 fetch facts from a neutral host"
+    },
+    {
+      "key": "tamper",
+      "title": "Tamper \u2014 a mutated AgentAddr is rejected"
+    },
+    {
+      "key": "spoof",
+      "title": "Spoof \u2014 a forged credential is rejected"
+    },
+    {
+      "key": "contest",
+      "title": "Contest \u2014 an affected party's signed counter-claim is surfaced"
+    },
+    {
+      "key": "exit",
+      "title": "Exit \u2014 the agent severs its own identity; prior authority dies"
+    }
+  ]
+}

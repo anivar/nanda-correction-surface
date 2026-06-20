@@ -1,0 +1,82 @@
+{
+  "scenario": "exit",
+  "title": "Exit \u2014 the agent severs its own identity; prior authority dies",
+  "summary": "Agent has exited this identity \u2014 fail closed (resolve the successor)",
+  "refused": true,
+  "steps": [
+    {
+      "n": 1,
+      "from": "Client",
+      "to": "Index",
+      "title": "Resolve AgentName \u2192 AgentAddr",
+      "detail": "urn:agent:acme:translator",
+      "status": "info",
+      "layer": "paper",
+      "tier": "Tier 1 \u00b7 Lean Index",
+      "data": {
+        "agent_id": "nanda:translator-001",
+        "agent_did": "did:key:z6MkoppLnz\u2026",
+        "registration_type": "did",
+        "ttl": 3600
+      },
+      "boundary": false
+    },
+    {
+      "n": 2,
+      "from": "Client",
+      "to": "Client",
+      "title": "Verify AgentAddr \u2014 Ed25519 over JCS, resolver pinned",
+      "detail": "signature valid; signed by the pinned index resolver",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 1",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 3,
+      "from": "Client",
+      "to": "Client",
+      "title": "Select AgentFacts source",
+      "detail": "primary path \u2192 provider domain",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 4,
+      "from": "Client",
+      "to": "Provider Host",
+      "title": "Fetch AgentFacts bundle",
+      "detail": "GET from the provider host (untrusted; it signs nothing)",
+      "status": "ok",
+      "layer": "paper",
+      "tier": "Tier 2",
+      "data": {},
+      "boundary": false
+    },
+    {
+      "n": 5,
+      "from": "Client",
+      "to": "Client",
+      "title": "Exit gate \u2014 self-sovereign severance",
+      "detail": "identity SEVERED by its own key \u2192 prior authority inexecutable \u00b7 successor did:key:z6Mkiu1Bpt\u2026",
+      "status": "fail",
+      "layer": "extension",
+      "tier": "Correction surface \u00b7 EXIT",
+      "data": {
+        "severed_by": "did:key:z6MkoppLnz\u2026",
+        "successor": "did:key:z6Mkiu1Bpt\u2026"
+      },
+      "boundary": true
+    }
+  ],
+  "identities": {
+    "resolver": "did:key:z6MkfJbW8w\u2026",
+    "provider_issuer": "did:key:z6Mkm6TStm\u2026",
+    "auditor_issuer": "did:key:z6MkjmHass\u2026",
+    "agent": "did:key:z6MkoppLnz\u2026"
+  }
+}
