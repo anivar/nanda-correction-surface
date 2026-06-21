@@ -43,7 +43,7 @@ Toolchain: **uv** (env + Python 3.14, `uv.lock` pinned), **ruff** (lint + format
 | **spoof** | a credential from an **untrusted issuer**, and a **tampered** credential from a trusted issuer, are both **rejected** |
 | **contest** | an affected party files a **signed counter-claim** bound to a prior interaction; the client verifies its standing and **surfaces it alongside** the issuers' claims |
 | **exit** | self-sovereign severance — the agent retires its own did:key; prior authority becomes **inexecutable** |
-| **registrations** | quilt of registration types in action: native, enterprise, and did:key paths |
+| **registrations** | quilt of registration types: enterprise-routed and did:key paths (native is the default, shown in register) |
 | **revoke** | issuer-signed revocation entry served by the index and **verified client-side** — only a credential's own trusted issuer may revoke it |
 
 ## Architecture
