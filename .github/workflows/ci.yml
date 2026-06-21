@@ -39,4 +39,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Parse-check (compileall) on Python 3.12
-        run: python -m compileall -q nanda_core index client facts agent issuer demo explorer tests
+        run: python -m compileall -q nanda_core index client facts agent issuer demo explorer tests schemas

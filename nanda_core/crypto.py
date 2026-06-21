@@ -114,7 +114,7 @@ def verify_record(record: dict, pub: Ed25519PublicKey) -> bool:
     """Verify a record produced by sign_record(). Fails closed: any missing/
     malformed proof, or any mutation of a signed field, returns False."""
     proof = record.get(PROOF_KEY)
-    if not isinstance(proof, dict) or "sig" not in proof:
+    if not isinstance(proof, dict) or not isinstance(proof.get("sig"), str):
         return False
     try:
         sig = b64u_decode(proof["sig"])

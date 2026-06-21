@@ -18,7 +18,7 @@ from . import _common as X
 
 
 def main() -> None:
-    print(C.rule("STEP 7 — registration types: native | enterprise-routed | DID-based"))
+    print(C.rule("STEP 7 — registration types: enterprise-routed | DID-based"))
     provider, auditor = X.load_issuers()
     policy = TrustPolicy.load(config.TRUST_POLICY_PATH)
     client = NandaClient(policy, config.INDEX_URL)
@@ -80,7 +80,7 @@ def main() -> None:
     print(C.bold("DID-based (resolved by the agent's own DID):"))
     client.resolve(did_name, act=False)
 
-    print(C.ok(C.bold("registration-type demo passed — native + enterprise-routed + DID-based")))
+    print(C.ok(C.bold("registration-type demo passed — enterprise-routed + DID-based")))
 
 
 if __name__ == "__main__":

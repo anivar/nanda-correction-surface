@@ -9,7 +9,7 @@ import pytest
 
 from client.resolver import NandaClient, VerificationFailure
 from issuer import issue_auditor_credential, issue_provider_credential
-from nanda_core import crypto, severance, vc
+from nanda_core import contest, crypto, severance, vc
 from nanda_core.keystore import Identity
 from nanda_core.models import (
     AgentAddr,
@@ -108,7 +108,11 @@ def test_wrong_resolver_pin_fails_closed():
 
 
 def test_untrusted_issuer_fails_closed():
-    with _client(_policy(trusted_issuers={AUDITOR.did}), _addr(), _bundle()) as c:
+    # trust only the auditor; the provider VC's issuer is therefore untrusted.
+    # required_issuers is emptied so the policy itself is valid (required ⊆ trusted);
+    # the rejection must come from the credential check, not policy construction.
+    policy = _policy(trusted_issuers={AUDITOR.did}, required_issuers=set())
+    with _client(policy, _addr(), _bundle()) as c:
         with pytest.raises(VerificationFailure):
             c.resolve("urn:agent:acme:t", act=False)
 
@@ -257,4 +261,70 @@ def test_revocation_by_untrusted_issuer_is_ignored():
     c._get_json = fake_get
     with c:
         r = c.resolve("urn:agent:acme:t", act=False)  # not revoked -> resolves
+    assert r.provider_credential["credentialSubject"]["id"] == AGENT.did
+
+
+def test_contestations_surfaced_and_deduped():
+    # A valid contestation is surfaced once even when duplicated; an id-less one is dropped.
+    party = Identity.generate("affected party")
+    receipt, iid = contest.mint_interaction_receipt(AGENT, "nanda:x", party.did, "job #1")
+    c1 = contest.file_contestation(
+        party,
+        agent_id="nanda:x",
+        agent_did=AGENT.did,
+        interaction_id=iid,
+        statement="output dropped the dispute clause",
+        receipt=receipt,
+    )
+    bundle = _bundle()
+    bundle["contestations"] = [c1, dict(c1), {"statement": "no id, must be dropped"}]
+    with _client(_policy(), _addr(), bundle) as c:
+        r = c.resolve("urn:agent:acme:t", act=False)
+    assert len(r.contestations) == 1
+    assert r.contestations[0].contestant == party.did
+
+
+def test_live_revocation_by_trusted_non_issuer_is_ignored():
+    # A revocation signed by a TRUSTED issuer that did NOT issue the credential must
+    # not revoke it: only the credential's own issuer can revoke (own-issuer match).
+    bundle = _bundle()
+    cred = vc.verify_credential(bundle["provider_vc"], trusted_issuers={PROVIDER.did})
+    cid = cred["id"]
+    sig = crypto.b64u_encode(AUDITOR.sign(cid.encode()))  # AUDITOR is trusted but not the issuer
+    c = NandaClient(
+        _policy(), "http://index", revocation_url="http://index/revocations", verbose=False
+    )
+
+    def fake_get(url, *, params=None, what="resource"):
+        if "/revocations" in url:
+            return {
+                "revoked": [{"credential_id": cid, "issuer_did": AUDITOR.did, "signature": sig}]
+            }
+        if "/resolve" in url:
+            return _addr()
+        return bundle
+
+    c._get_json = fake_get
+    with c:
+        r = c.resolve("urn:agent:acme:t", act=False)  # non-issuer revocation ignored -> resolves
+    assert r.provider_credential["credentialSubject"]["id"] == AGENT.did
+
+
+def test_stale_agentaddr_warns_not_fails():
+    # ttl freshness is warn-only (staleness is a cache concern, not tampering):
+    # a signed-but-stale AgentAddr must still resolve, not fail closed.
+    stale = sign_agentaddr(
+        AgentAddr(
+            agent_id="nanda:x",
+            agent_name="urn:agent:acme:t",
+            agent_did=AGENT.did,
+            primary_facts_url="http://primary:8000/facts/nanda:x",
+            private_facts_url="http://neutral:8000/facts/nanda:x",
+            issued_at="2000-01-01T00:00:00Z",
+            ttl=1,
+        ),
+        RESOLVER,
+    )
+    with _client(_policy(), stale, _bundle()) as c:
+        r = c.resolve("urn:agent:acme:t", act=False)
     assert r.provider_credential["credentialSubject"]["id"] == AGENT.did

@@ -57,10 +57,16 @@ def put_facts(agent_id: str, bundle: FactsBundle):
     prior = _store.get(agent_id, {})
     existing = prior.get("contestations", [])
     stored = bundle.model_dump()
-    seen = {c.get("contestation_id") for c in stored.get("contestations", [])}
+    # Keep only id-bearing contestations and dedup by id: an id-less entry cannot be
+    # deduplicated (its None key collides), and the POST path already requires an id.
+    kept = [c for c in stored.get("contestations", []) if c.get("contestation_id")]
+    seen = {c["contestation_id"] for c in kept}
     for c in existing:
-        if c.get("contestation_id") not in seen:
-            stored.setdefault("contestations", []).append(c)
+        cid = c.get("contestation_id")
+        if cid and cid not in seen:
+            kept.append(c)
+            seen.add(cid)
+    stored["contestations"] = kept
     # A severance, once filed, is permanent: re-hosting cannot un-sever an identity
     # (the host can't forge the agent's key anyway). Preserve any prior severance.
     if prior.get("severance") and not stored.get("severance"):

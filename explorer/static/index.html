@@ -203,9 +203,9 @@
       <span style="color:var(--fail)"><i></i> blocked · fail closed</span>
     </div>
     <div class="player">
-      <button id="prev" aria-label="Previous step">◀</button>
+      <button id="prev" aria-label="Previous step">⏮ Prev</button>
       <button id="play" aria-label="Play" aria-pressed="false">▶ Play</button>
-      <button id="next" aria-label="Next step">▶</button>
+      <button id="next" aria-label="Next step">Next ⏭</button>
       <span class="count" id="count"></span>
       <span class="hint">click a step · ← → keys · space to play</span>
     </div>
@@ -512,7 +512,7 @@ function renderSteps(d,cur){
   tl.querySelectorAll(".card").forEach(c=>{
     const jump=()=>{stop();setCurrent(+c.dataset.n,true);};
     c.onclick=jump;
-    c.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();jump();} };
+    c.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();jump();} };
   });
 }
 

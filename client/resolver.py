@@ -14,6 +14,9 @@ Two resolution paths are supported (paper §V.D):
   - "private" : fetch from the neutral host, so the agent's domain never learns
                 who resolved it (requester privacy)
 Both verify identically, because AgentFacts are signed by their issuers, not the host.
+(The privacy path applies to native/DID entries; an enterprise-routed entry follows
+its registry, which only yields a privacy URL if it returns one — otherwise the client
+warns that the requester is not hidden rather than claim privacy it cannot provide.)
 """
 
 from __future__ import annotations
@@ -265,6 +268,20 @@ class NandaClient:
             reg_url = signed["enterprise_registry_url"]
             self._say(C.ok(f"enterprise-routed: via registry {reg_url}"))
             reg = self._get_json(reg_url, what="enterprise registry")
+            # The privacy path only holds here if the registry itself offers a
+            # neutral-host URL; otherwise follow its facts_url and say plainly that
+            # the requester is NOT hidden, rather than falsely report privacy.
+            if path == "private":
+                priv = reg.get("private_facts_url")
+                if priv:
+                    self._say(C.ok("registry provided a privacy-path (neutral) URL"))
+                    return priv, "neutral"
+                self._say(
+                    C.warn(
+                        "privacy path requested, but this enterprise registry exposes no "
+                        "private URL — using its facts URL; the requester is not hidden"
+                    )
+                )
             url = reg.get("facts_url")
             if not url:
                 raise VerificationFailure("enterprise registry returned no facts_url")

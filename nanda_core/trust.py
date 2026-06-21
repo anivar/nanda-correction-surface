@@ -33,7 +33,18 @@ class TrustPolicy:
     required_issuers: set[str] = field(default_factory=set)
     revoked: set[str] = field(default_factory=set)
 
+    def __post_init__(self) -> None:
+        # A required issuer the client does not also trust can never be satisfied,
+        # which would make every resolution fail closed for an opaque reason. Catch
+        # that misconfiguration at construction, not at the first resolve.
+        extra = self.required_issuers - self.trusted_issuers
+        if extra:
+            raise ValueError(f"required_issuers not all in trusted_issuers: {sorted(extra)}")
+
     def is_revoked(self, credential: dict) -> bool:
+        # A credential carrying neither an id nor a credentialStatus.id cannot be
+        # pinned in this static set, so it is unrevocable via this path; the live,
+        # issuer-signed revocation list in the resolver is the dynamic complement.
         cid = credential.get("id")
         sid = (credential.get("credentialStatus") or {}).get("id")
         return cid in self.revoked or sid in self.revoked

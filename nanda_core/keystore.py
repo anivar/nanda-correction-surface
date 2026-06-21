@@ -67,14 +67,20 @@ def load_or_create_private_key(path: str) -> Ed25519PrivateKey:
             return crypto.private_key_from_b64(fh.read().strip())
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     priv = crypto.generate_private_key()
-    with open(path, "w", encoding="ascii") as fh:
+    # 0o600 on creation: a private key must never be group/world-readable,
+    # regardless of the process umask (plain open() would yield 0o644).
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="ascii") as fh:
         fh.write(crypto.private_key_to_b64(priv))
     return priv
 
 
 def write_json(path: str, obj: dict) -> None:
+    # 0o600: this path can hold secret material (demo state carries issuer/agent
+    # secret keys), so never leave it group/world-readable, whatever the umask.
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
         json.dump(obj, fh, indent=2)
 
 

@@ -278,7 +278,9 @@ def walk(scenario: str) -> dict:
 
     # --- EXTENSION: exit gate (severance) --------------------------------------
     sev = bundle.get("severance")
-    if sev and severance.verify_severance(sev, expected_agent_did=addr.get("agent_did")):
+    if sev and severance.verify_severance(
+        sev, expected_agent_did=addr.get("agent_did"), expected_agent_id=addr.get("agent_id")
+    ):
         step(
             YOU,
             YOU,
@@ -340,8 +342,29 @@ def walk(scenario: str) -> dict:
             steps, f"Provider credential failed verification — fail closed ({msg})", scenario, w
         )
 
-    # --- Hop 5: auditor VC + threshold -----------------------------------------
-    auditor_cred = vc.verify_credential(bundle["auditor_vc"], trusted_issuers=w["trusted"])
+    # --- Hop 5: auditor VC + threshold (mirrors client/resolver.py) -------------
+    try:
+        auditor_cred = vc.verify_credential(bundle["auditor_vc"], trusted_issuers=w["trusted"])
+        if auditor_cred["credentialSubject"].get("id") != provider_cred["credentialSubject"].get(
+            "id"
+        ):
+            raise vc.VCError("auditor VC subject ≠ provider VC subject")
+    except vc.VCError as exc:
+        msg = _short_exc(exc)
+        step(
+            YOU,
+            YOU,
+            "Verify auditor credential — independent issuer",
+            f"REJECTED: {msg}",
+            plain="The second reviewer's signed claim does not check out (untrusted, tampered, "
+            "or about a different agent), so resolution stops.",
+            status="fail",
+            layer=PAPER,
+            tier="Tier 2 · AgentFacts",
+        )
+        return _finish(
+            steps, f"Auditor credential failed verification — fail closed ({msg})", scenario, w
+        )
     ev = auditor_cred["credentialSubject"].get("evaluations", {})
     step(
         YOU,

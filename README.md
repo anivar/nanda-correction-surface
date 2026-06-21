@@ -112,7 +112,7 @@ client/       the verifying resolver (prints & verifies every hop, fails closed)
 demo/         register / resolve / tamper / spoof / contest / exit / run_all / run_local.sh
 explorer/     self-contained protocol explorer (static-hostable; real in-process crypto)
 schemas/      JSON Schemas for every artefact
-tests/        74 unit + integration tests
+tests/        77 unit + integration tests
 docs/         design note, A2A mapping, diagrams
 ```
 
@@ -123,7 +123,7 @@ make test         # or: uv run pytest -q
 make lint         # ruff check + format --check
 ```
 
-74 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
+77 tests cover canonicalisation, signed records, did:key, AgentAddr tamper
 detection, VC issue/verify (untrusted-issuer / tamper / expiry), the facts host,
 contestation standing, self-sovereign exit (severance), the resolver walk, and the
 A2A projection.
