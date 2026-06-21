@@ -138,9 +138,15 @@ crypto** (Ed25519/JCS, W3C VCs, severance) — no dependency on the other servic
 make explorer        # → http://localhost:8090   (or: docker compose up → :8090)
 ```
 
-Scenarios: resolve · privacy · tamper · spoof · contest · exit. The UI marks the
-boundary between the **NANDA paper** (the substrate) and the **correction surface**
-extension, with operator-side authorisation shown as cited context.
+Scenarios — `resolve · privacy · tamper · spoof · contest · exit` — are grouped as
+the **NANDA paper** (core) and **this work** (correction surface). Each plays as a
+**swimlane sequence diagram** with a media-player step-through (play/pause, arrow
+keys, click a step), a plain-English line on every step above the precise mechanism,
+and hover **glossary** tooltips. A **"Where NANDA sits"** panel places the work on the
+agent-stack ladder (identity → delegation → intent → continuity → consequence) and
+links every standard and steward body (W3C, IETF, OpenID, FIDO, OASIS, OWASP, Linux
+Foundation/AAIF, NIST …) to its primary source. The amber boundary marks the
+correction-surface extension; operator-side authorisation is shown as cited context.
 
 It hosts with **no backend** (e.g. GitHub Pages or any static domain):
 
