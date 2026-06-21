@@ -25,7 +25,10 @@ package = false               # this is an application, not a distributable libr
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+# Target 3.13 so the formatter KEEPS parenthesised multi-exception `except` clauses.
+# The unparenthesised PEP 758 form is valid only on 3.14+ and trips tools/readers on
+# older interpreters; the runtime is still 3.14 (see .python-version / requires-python).
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

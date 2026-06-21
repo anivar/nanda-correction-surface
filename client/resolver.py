@@ -253,7 +253,7 @@ class NandaClient:
                     decode_did_key(issuer), crypto.b64u_decode(sig), cid.encode()
                 ):
                     live[cid] = issuer
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 continue
         self._revoked_live = live
 
