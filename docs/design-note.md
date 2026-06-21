@@ -128,6 +128,17 @@ that direction. (AuthZEN / Biscuit / SCITT are landscape context for discussion;
 they are deliberately **not** wired into the code — the prototype demonstrates one
 principled primitive well rather than three integrations half-done.)
 
+**Where this sits among the agent standards.** Read the stack as a five-rung ladder
+— identity → delegation → intent → continuity → consequence. Rungs 1–4 are the
+operator's *control surface* and are well covered (DID/VC at W3C; OAuth, WIMSE, AAuth,
+Transaction Tokens at IETF; AuthZEN and CAEP at OpenID; WebAuthn at FIDO). Rung 5 —
+*who answers when a permitted action is wrong* — is empty across the corpus by
+charter; it is the governed party's *correction surface*, which this work targets.
+NANDA itself sits at rung 1 (identity & discovery; its AgentFacts is a superset of the
+A2A Agent Card). The full ladder, with every standard linked to its steward and
+primary source, is in [`docs/diagrams.md` §6](diagrams.md) and the explorer's
+"Where NANDA sits" panel.
+
 ## 4. Honest limitations
 
 - **Privacy path moves trust, it doesn't remove it.** The neutral host still sees

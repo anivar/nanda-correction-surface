@@ -107,3 +107,42 @@ flowchart LR
   AP -.->|"signed counter-claim (contestation)"| FACTS["AgentFacts (travels with the agent)"]
   FACTS -.->|"surfaced to"| C["Client → informed refusal"]
 ```
+
+## 6. Where NANDA sits — the agent-stack ladder
+
+Agent-identity standards answer five questions, bottom to top. The corpus covers
+rungs 1–4 — the operator's **control surface** — and stops at rung 5, the governed
+party's **correction surface**, by charter. NANDA sits at rung 1 (identity &
+discovery); this work's correction surface is a protocol-layer attempt at the empty
+rung 5. Steward attributions are verified against primary sources; the explorer
+renders this interactively at <https://anivar.github.io/nanda-correction-surface/>.
+
+```mermaid
+flowchart BT
+  R1["rung 1 · who is acting? — identity &amp; discovery<br/>DID·VC (W3C) · WIMSE·SPIFFE (IETF·CNCF) · WebAuthn (FIDO) · <b>NANDA AgentFacts (MIT)</b>"]:::nanda
+  R2["rung 2 · on whose behalf? — delegation<br/>OAuth act/sub, RFC 8693 (IETF) · Identity Chaining (IETF) · AAuth Person Server (IETF)"]
+  R3["rung 3 · why? — intent<br/>Agentic JWT (IETF) · AAuth Mission (IETF) · Transaction Tokens (IETF)"]
+  R4["rung 4 · may it continue? — continuity<br/>AuthZEN (OpenID) · AAuth missions (IETF) · Txn-Token re-eval (IETF) · CAEP/SSF (OpenID)"]
+  R5["rung 5 · who answers when a permitted action is wrong? — consequence / redress<br/><b>no standard</b> · correction surface (THIS WORK) · EU AI Act / PLD (institution)"]:::gap
+  R1 --> R2 --> R3 --> R4
+  R4 -->|"boundary: surface one (operator control, built) ⟶ surface two (the governed party)"| R5
+  classDef gap fill:#3a2c10,stroke:#f5b342,color:#f5e3c0;
+  classDef nanda fill:#10243a,stroke:#38bdf8,color:#cfe8fb;
+```
+
+Each standard linked to its primary source:
+
+| Rung | Question | Standards (steward) |
+|---|---|---|
+| **1 · identity** | who is acting? | [DID](https://www.w3.org/TR/did-core/) · [VC](https://www.w3.org/TR/vc-data-model-2.0/) (W3C) · [WIMSE](https://datatracker.ietf.org/wg/wimse/) (IETF) · [SPIFFE](https://spiffe.io/) (CNCF) · [WebAuthn](https://fidoalliance.org/passkeys/) (FIDO) · [NANDA AgentFacts](https://arxiv.org/abs/2507.14263) (MIT) |
+| **2 · delegation** | on whose behalf? | [OAuth Token Exchange — RFC 8693](https://www.rfc-editor.org/rfc/rfc8693) · [Identity Chaining](https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-chaining/) · [AAuth](https://datatracker.ietf.org/doc/draft-hardt-oauth-aauth-protocol/) (IETF) |
+| **3 · intent** | why? | [Agentic JWT](https://datatracker.ietf.org/doc/draft-goswami-agentic-jwt/) · AAuth Mission · [Transaction Tokens](https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/) (IETF) |
+| **4 · continuity** | may it continue? | [AuthZEN](https://openid.net/wg/authzen/) · [CAEP / Shared Signals](https://openid.net/wg/sse/) (OpenID) · AAuth missions · Transaction Tokens re-eval (IETF) |
+| **5 · consequence** | who answers when a permitted action is wrong? | — no standards-body spec — · **correction surface (this work)** · [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) (institution) |
+
+Riding on rungs 1–4 (not part of the authority ladder): [A2A](https://a2a-protocol.org/)
+agent↔agent (LF) · [MCP](https://modelcontextprotocol.io/) tool access (LF/AAIF) ·
+[AP2](https://ap2-protocol.org/) payments (LF/Google); security & threats:
+[OWASP GenAI](https://genai.owasp.org/), [CoSAI](https://www.coalitionforsecureai.org/)
+(OASIS), [NIST](https://www.nist.gov/). NANDA's AgentFacts is a superset of the A2A
+Agent Card.
